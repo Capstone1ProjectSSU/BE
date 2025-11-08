@@ -24,6 +24,16 @@ public enum Code {
     USER_NOT_FOUND(4001, HttpStatus.NOT_FOUND, " User Not Found"),
     USER_SAME(4002, HttpStatus.BAD_REQUEST, "이미 존재하는 유저입니다."),
 
+    // Audio
+    AUDIO_NOT_FOUND(5001, HttpStatus.NOT_FOUND, "음원을 찾을 수 없습니다."),
+    AUDIO_FILE_EMPTY(5002, HttpStatus.BAD_REQUEST, "음원 파일이 비어있습니다."),
+    AUDIO_FILE_TOO_LARGE(5003, HttpStatus.PAYLOAD_TOO_LARGE, "파일 크기는 50MB를 초과할 수 없습니다."),
+    AUDIO_INVALID_FORMAT(5004, HttpStatus.BAD_REQUEST, "MP3 형식만 지원됩니다."),
+    AUDIO_FORBIDDEN(5005, HttpStatus.FORBIDDEN, "음원에 대한 접근 권한이 없습니다."),
+
+    // Sheet
+    SHEET_NOT_FOUND(6001, HttpStatus.NOT_FOUND, "악보를 찾을 수 없습니다."),
+    SHEET_FORBIDDEN(6002, HttpStatus.FORBIDDEN, "악보에 대한 접근 권한이 없습니다."),
     ;
 
 
