@@ -23,4 +23,14 @@ public class PostService {
         }
         return PostConverter.toPostShareResponseDto(post);
     }
+
+    public PostShareResponseDto updatePostUnShare(Long postId) {
+        Post post = postRepository.findById(postId).orElse(null);
+        if (post == null) {
+            return null;
+        } else{
+            post.updateUnShare();
+        }
+        return PostConverter.toPostShareResponseDto(post);
+    }
 }
