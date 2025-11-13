@@ -42,4 +42,8 @@ public class Post extends BaseEntity {
     public void updateShare(){
         this.share = 1;
     }
+
+    public void updateUnShare(){
+        this.share = 0;
+    }
 }
