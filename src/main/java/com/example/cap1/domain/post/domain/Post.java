@@ -1,0 +1,37 @@
+package com.example.cap1.domain.post.domain;
+
+import com.example.cap1.domain.comment.domain.Comment;
+import com.example.cap1.domain.sheet.domain.Sheet;
+import com.example.cap1.domain.user.domain.User;
+import com.example.cap1.global.database.BaseEntity;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Getter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+public class Post extends BaseEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "userId")
+    private User user;
+
+    @OneToOne(fetch = FetchType.LAZY)   //지연 로딩
+    @JoinColumn(name = "sheetId")
+    private Sheet sheet;
+
+    private Float rating;
+    private Long share;     // 공유 여부 1: 공개, 0: 비공개
+    private Long commentCount;      // 댓글 수
+
+    @OneToMany(mappedBy = "post")
+    private List<Comment> commentList = new ArrayList<>();
+}
