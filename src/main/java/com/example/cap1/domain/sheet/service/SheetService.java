@@ -112,7 +112,7 @@ public class SheetService {
                 request.getTuning(),
                 request.getCapo(),
                 request.getTempo(),
-                request.getKey()
+                request.getSongKey()
         );
 
         // 5. 변경사항 저장 (더티 체킹으로 자동 저장됨)

@@ -1,0 +1,22 @@
+FROM eclipse-temurin:17-jdk-jammy
+
+WORKDIR /workspace
+
+COPY gradlew .
+COPY gradle ./gradle
+COPY build.gradle .
+COPY settings.gradle .
+
+RUN chmod +x gradlew
+RUN ./gradlew dependencies --no-daemon || true
+
+COPY . .
+
+RUN mkdir -p /data/uploads
+RUN mkdir -p /data/files
+
+ENV SPRING_DEVTOOLS_RESTART_TRIGGER_FILE=".reload"
+
+EXPOSE 8080
+
+CMD ["./gradlew", "bootRun", "--no-daemon"]

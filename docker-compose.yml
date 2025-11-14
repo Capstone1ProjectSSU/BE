@@ -1,0 +1,48 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: cap-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: capstone
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "user", "-ppassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  cap-be:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: cap-be
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/workspace
+      - uploads_data:/uploads
+      - files_data:/files
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/capstone
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+      SPRING_SQL_INIT_MODE: always
+      SPRING_SQL_INIT_DATA_LOCATIONS: classpath:data.sql
+      AI_SERVER_BASE_URL: http://ai-server:8000
+      AI_SERVER_API_KEY: dummy-key
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
+  uploads_data:
+  files_data:

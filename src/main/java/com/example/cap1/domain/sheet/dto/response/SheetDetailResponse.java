@@ -26,7 +26,7 @@ public class SheetDetailResponse {
     private Integer capo;
     private Long duration;
     private Integer tempo;
-    private String key;
+    private String songKey;
     private String audioUrl;
     private String sheetDataUrl;
 
@@ -47,7 +47,7 @@ public class SheetDetailResponse {
                 .capo(sheet.getCapo())
                 .duration(sheet.getDuration())
                 .tempo(sheet.getTempo())
-                .key(sheet.getKey())
+                .songKey(sheet.getSongKey())
                 .audioUrl(audio.getFilePath())
                 .sheetDataUrl(sheet.getSheetDataUrl())
                 .createdAt(sheet.getCreatedAt())

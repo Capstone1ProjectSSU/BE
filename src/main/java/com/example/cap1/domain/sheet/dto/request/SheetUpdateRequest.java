@@ -20,7 +20,7 @@ public class SheetUpdateRequest {
     private String tuning;
     private Integer capo;
     private Integer tempo;
-    private String key;
+    private String songKey;
 
     /**
      * 요청 데이터 유효성 검증

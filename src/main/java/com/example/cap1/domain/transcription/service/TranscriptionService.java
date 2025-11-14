@@ -19,6 +19,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -106,25 +113,78 @@ public class TranscriptionService {
     }
 
     /**
-     * 🆕 악보 생성 상태 조회
-     */
-    public TranscriptionStatusResponse getTranscriptionStatus(Long jobId, Long userId) {
-        log.info("악보 생성 상태 조회 - jobId: {}, userId: {}", jobId, userId);
+     * Frontend Polling API
+     * GET /api/transcription/request/{jobId}
+     * */
+    @Transactional
+public TranscriptionResponse mockUpdateStatus(String jobId) {
 
-        // 1. Job 조회
-        TranscriptionJob job = transcriptionJobRepository.findById(jobId)
-                .orElseThrow(() -> new GeneralException(Code.JOB_NOT_FOUND));
+    TranscriptionJob job = transcriptionJobRepository.findById(Long.parseLong(jobId))
+            .orElseThrow(() -> new GeneralException(Code.JOB_NOT_FOUND));
 
-        // 2. 권한 확인
-        if (!job.getUserId().equals(userId)) {
-            log.warn("작업 접근 권한 없음 - jobId: {}, requestUserId: {}, ownerUserId: {}",
-                    jobId, userId, job.getUserId());
-            throw new GeneralException(Code.JOB_FORBIDDEN);
-        }
+    ProgressStage stage = job.getProgressStage();
 
-        log.info("작업 상태 조회 완료 - jobId: {}, status: {}, progress: {}%",
-                jobId, job.getProgressStage(), job.getProgressPercent());
+    if (stage == ProgressStage.PENDING) {
+        job.updateStatus(ProgressStage.PROCESSING);
+    } 
+    else if (stage == ProgressStage.PROCESSING) {
+        job.updateStatus(ProgressStage.COMPLETED);
 
-        return TranscriptionStatusResponse.from(job);
+        generateMockSheetJson(job);
     }
+
+    transcriptionJobRepository.save(job);
+
+    return TranscriptionResponse.from(job);
+}
+
+private void generateMockSheetJson(TranscriptionJob job) {
+
+    try {
+        // 실제 저장 경로
+        String baseDir = "/data/files/sheets/";
+        File folder = new File(baseDir);
+        if (!folder.exists()) folder.mkdirs();
+
+        // 파일명 결정
+        String filePath = baseDir + "music-" + job.getId() + ".json";
+
+        // 프론트가 접근할 URL
+        String publicUrl = "/data/files/music-" + job.getId() + ".json";
+
+        // JSON 콘텐츠 생성
+        String content = """
+                {
+                  "id": %d,
+                  "title": "%s",
+                  "artist": "%s",
+                  "instrument": "%s",
+                  "difficulty": "NORMAL",
+                  "tempo": 120,
+                  "capo": 0,
+                  "createdAt": "%s",
+                  "notes": [
+                    { "string": 1, "fret": 3, "beat": 1.0 }
+                  ]
+                }
+                """.formatted(
+                job.getId(),
+                "Preview Song",
+                "Preview Artist",
+                job.getInstrument(),
+                LocalDateTime.now()
+        );
+
+        // 파일 저장
+        Files.writeString(Path.of(filePath), content, StandardCharsets.UTF_8);
+
+        // Job 에 URL 저장
+        job.setSheetDataUrl(publicUrl);
+
+    } catch (Exception e) {
+        log.error("Mock sheet JSON 생성 실패", e);
+        job.updateStatus(ProgressStage.FAILED);
+    }
+}
+
 }

@@ -111,4 +111,15 @@ public class TranscriptionJob extends BaseEntity {
                 .queuedAt(LocalDateTime.now())
                 .build();
     }
+
+    @Column(name = "sheetDataUrl", length = 500)
+    private String sheetDataUrl;
+
+    public void setSheetDataUrl(String url) {
+        this.sheetDataUrl = url;
+    }
+
+    public String getSheetDataUrl() {
+        return this.sheetDataUrl;
+    }
 }

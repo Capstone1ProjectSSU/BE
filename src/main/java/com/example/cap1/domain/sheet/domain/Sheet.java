@@ -47,8 +47,8 @@ public class Sheet extends BaseEntity {
     @Column(name = "tempo")
     private Integer tempo;
 
-    @Column(name = "`key`", length = 10)
-    private String key;
+    @Column(name = "songKey", length = 10)
+    private String songKey;
 
     @Column(name = "sheetDataUrl", length = 500)
     private String sheetDataUrl;
