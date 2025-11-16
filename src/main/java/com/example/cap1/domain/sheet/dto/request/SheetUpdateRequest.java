@@ -10,10 +10,13 @@ import lombok.Setter;
 @NoArgsConstructor
 public class SheetUpdateRequest {
 
+    // 현재 사용 필드
     private String title;
     private String artist;
-    private String instrument;
     private Difficulty difficulty;
+
+    // 추후 개발 예정 필드 (빈 값 허용)
+    private String instrument;
     private String tuning;
     private Integer capo;
     private Integer tempo;
@@ -24,30 +27,23 @@ public class SheetUpdateRequest {
      */
     public void validate() {
         // 최소 하나의 필드는 수정되어야 함
-        if (title == null && artist == null && instrument == null &&
-                difficulty == null && tuning == null && capo == null &&
+        if (title == null && artist == null && difficulty == null &&
+                instrument == null && tuning == null && capo == null &&
                 tempo == null && key == null) {
             throw new IllegalArgumentException("수정할 필드가 하나 이상 필요합니다.");
         }
 
-        // title 검증
+        // title 검증 - null이 아니고 비어있지 않을 때만
         if (title != null && title.trim().isEmpty()) {
             throw new IllegalArgumentException("제목은 비어있을 수 없습니다.");
         }
 
-        // artist 검증
+        // artist 검증 - null이 아니고 비어있지 않을 때만
         if (artist != null && artist.trim().isEmpty()) {
             throw new IllegalArgumentException("아티스트는 비어있을 수 없습니다.");
         }
 
-        // capo 검증 (0-20 범위)
-        if (capo != null && (capo < 0 || capo > 20)) {
-            throw new IllegalArgumentException("카포는 0-20 사이의 값이어야 합니다.");
-        }
-
-        // tempo 검증 (20-300 범위)
-        if (tempo != null && (tempo < 20 || tempo > 300)) {
-            throw new IllegalArgumentException("템포는 20-300 사이의 값이어야 합니다.");
-        }
+        // instrument, tuning, key, capo, tempo는 추후 개발 예정
+        // 별도 검증 없음
     }
 }

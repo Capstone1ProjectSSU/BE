@@ -62,29 +62,34 @@ public class Sheet extends BaseEntity {
     public void update(String title, String artist, String instrument,
                        Difficulty difficulty, String tuning, Integer capo,
                        Integer tempo, String key) {
+        // 필수 필드 - null이 아닐 때만 업데이트
         if (title != null) {
             this.title = title;
         }
         if (artist != null) {
             this.artist = artist;
         }
-        if (instrument != null) {
-            this.instrument = instrument;
-        }
         if (difficulty != null) {
             this.difficulty = difficulty;
+        }
+
+        // 추후 개발 필드 - null이 아니면 업데이트 (빈 문자열도 허용)
+        if (instrument != null) {
+            this.instrument = instrument;
         }
         if (tuning != null) {
             this.tuning = tuning;
         }
+        if (key != null) {
+            this.key = key;
+        }
+
+        // 숫자 필드
         if (capo != null) {
             this.capo = capo;
         }
         if (tempo != null) {
             this.tempo = tempo;
-        }
-        if (key != null) {
-            this.key = key;
         }
     }
 }
