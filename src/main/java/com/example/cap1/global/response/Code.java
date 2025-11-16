@@ -40,6 +40,7 @@ public enum Code {
     JOB_ALREADY_PROCESSING(7002, HttpStatus.CONFLICT, "해당 음원에 대한 작업이 이미 진행 중입니다."),
     INSTRUMENT_NOT_SUPPORTED(7003, HttpStatus.NOT_ACCEPTABLE, "지원하지 않는 악기입니다."),
     AI_SERVER_ERROR(7004, HttpStatus.INTERNAL_SERVER_ERROR, "AI 서버와의 통신에 실패했습니다."),
+    JOB_FORBIDDEN(7005, HttpStatus.FORBIDDEN, "해당 작업에 대한 접근 권한이 없습니다."),
     ;
 
 

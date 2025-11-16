@@ -2,6 +2,7 @@ package com.example.cap1.domain.transcription.controller;
 
 import com.example.cap1.domain.transcription.dto.request.TranscriptionRequest;
 import com.example.cap1.domain.transcription.dto.response.TranscriptionResponse;
+import com.example.cap1.domain.transcription.dto.response.TranscriptionStatusResponse;
 import com.example.cap1.domain.transcription.service.TranscriptionService;
 import com.example.cap1.global.response.ResponseDto;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,29 @@ public class TranscriptionController {
 
         TranscriptionResponse response = transcriptionService
                 .requestTranscription(userId, request);
+
+        return ResponseDto.of(response);
+    }
+
+    /**
+     * 🆕 악보 생성 상태 조회
+     *
+     * GET /api/transcription/status/{jobId}
+     *
+     * @param jobId 작업 ID
+     * @return 작업 상태 정보
+     */
+    @GetMapping("/status/{jobId}")
+    public ResponseDto<TranscriptionStatusResponse> getTranscriptionStatus(
+            @PathVariable Long jobId
+            // TODO: JWT 구현 후 @AuthenticationPrincipal User user 추가
+    ) {
+        log.info("악보 생성 상태 조회 API 호출 - jobId: {}", jobId);
+
+        Long userId = 1L; // TODO: JWT에서 추출
+
+        TranscriptionStatusResponse response = transcriptionService
+                .getTranscriptionStatus(jobId, userId);
 
         return ResponseDto.of(response);
     }
