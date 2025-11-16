@@ -8,6 +8,7 @@ import com.example.cap1.domain.transcription.domain.TranscriptionJob;
 import com.example.cap1.domain.transcription.dto.ai.AiEnqueueResponse;
 import com.example.cap1.domain.transcription.dto.request.TranscriptionRequest;
 import com.example.cap1.domain.transcription.dto.response.TranscriptionResponse;
+import com.example.cap1.domain.transcription.dto.response.TranscriptionStatusResponse;
 import com.example.cap1.domain.transcription.repository.TranscriptionJobRepository;
 import com.example.cap1.global.exception.GeneralException;
 import com.example.cap1.global.response.Code;
@@ -102,5 +103,28 @@ public class TranscriptionService {
 
             throw e;
         }
+    }
+
+    /**
+     * 🆕 악보 생성 상태 조회
+     */
+    public TranscriptionStatusResponse getTranscriptionStatus(Long jobId, Long userId) {
+        log.info("악보 생성 상태 조회 - jobId: {}, userId: {}", jobId, userId);
+
+        // 1. Job 조회
+        TranscriptionJob job = transcriptionJobRepository.findById(jobId)
+                .orElseThrow(() -> new GeneralException(Code.JOB_NOT_FOUND));
+
+        // 2. 권한 확인
+        if (!job.getUserId().equals(userId)) {
+            log.warn("작업 접근 권한 없음 - jobId: {}, requestUserId: {}, ownerUserId: {}",
+                    jobId, userId, job.getUserId());
+            throw new GeneralException(Code.JOB_FORBIDDEN);
+        }
+
+        log.info("작업 상태 조회 완료 - jobId: {}, status: {}, progress: {}%",
+                jobId, job.getProgressStage(), job.getProgressPercent());
+
+        return TranscriptionStatusResponse.from(job);
     }
 }
