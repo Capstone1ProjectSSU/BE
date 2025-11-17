@@ -2,6 +2,7 @@ package com.example.cap1.domain.comment.converter;
 
 import com.example.cap1.domain.comment.domain.Comment;
 import com.example.cap1.domain.comment.dto.request.CreateCommentRequestDto;
+import com.example.cap1.domain.comment.dto.response.CommentListResponseDto;
 import com.example.cap1.domain.comment.dto.response.CreateCommentResponseDto;
 import com.example.cap1.domain.post.domain.Post;
 import com.example.cap1.domain.user.domain.User;
@@ -24,6 +25,14 @@ public class CommentConverter {
         return CreateCommentResponseDto.builder()
                 .commentId(comment.getId())
                 .createdAt(comment.getCreatedAt())
+                .build();
+    }
+
+    public static CommentListResponseDto toCommentListResponseDto(Comment c) {
+        return CommentListResponseDto.builder()
+                .commentId(c.getId())
+                .contents(c.getContents())
+                .createdAt(c.getCreatedAt())
                 .build();
     }
 }
