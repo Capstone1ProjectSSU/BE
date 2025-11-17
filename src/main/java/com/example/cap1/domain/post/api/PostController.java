@@ -1,5 +1,6 @@
 package com.example.cap1.domain.post.api;
 
+import com.example.cap1.domain.post.dto.response.PostBoardResponseDto;
 import com.example.cap1.domain.post.dto.response.PostShareDetailResponseDto;
 import com.example.cap1.domain.post.dto.response.PostShareResponseDto;
 import com.example.cap1.domain.post.service.PostService;
@@ -29,6 +30,12 @@ public class PostController {
     @GetMapping("/{postId}")
     public ResponseDto<PostShareDetailResponseDto> getPostShare(@PathVariable Long postId) {
         PostShareDetailResponseDto response = postService.getPostDetail(postId);
+        return ResponseDto.of(response);
+    }
+
+    @GetMapping("")
+    public ResponseDto<PostBoardResponseDto> getPostBoard() {
+        PostBoardResponseDto response = postService.getPostList();
         return ResponseDto.of(response);
     }
 }

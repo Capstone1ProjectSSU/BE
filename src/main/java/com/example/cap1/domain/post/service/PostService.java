@@ -4,6 +4,8 @@ import com.example.cap1.domain.comment.converter.CommentConverter;
 import com.example.cap1.domain.comment.dto.response.CommentListResponseDto;
 import com.example.cap1.domain.post.converter.PostConverter;
 import com.example.cap1.domain.post.domain.Post;
+import com.example.cap1.domain.post.dto.response.PostBoardResponseDto;
+import com.example.cap1.domain.post.dto.response.PostListResponseDto;
 import com.example.cap1.domain.post.dto.response.PostShareDetailResponseDto;
 import com.example.cap1.domain.post.dto.response.PostShareResponseDto;
 import com.example.cap1.domain.post.repository.PostRepository;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 @Transactional
 @RequiredArgsConstructor
 public class PostService {
+
     private final PostRepository postRepository;
 
     public PostShareResponseDto updatePostShare(Long postId) {
@@ -57,7 +60,19 @@ public class PostService {
                 .map(CommentConverter::toCommentListResponseDto)
                 .collect(Collectors.toList());
 
-
         return PostConverter.toPostShareDetailResponseDto(post, commentList);
+    }
+
+    public PostBoardResponseDto getPostList() {
+        List<PostListResponseDto> board = postRepository.findAllWithSheetOrderByCreatedAtDesc()
+                .stream()
+                .map(PostConverter::toPostListResponseDto)
+                .collect(Collectors.toList());
+
+        PostBoardResponseDto data = PostBoardResponseDto.builder()
+                .board(board)
+                .build();
+
+        return data;
     }
 }
