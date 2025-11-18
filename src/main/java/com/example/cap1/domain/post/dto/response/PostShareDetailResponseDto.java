@@ -28,4 +28,5 @@ public class PostShareDetailResponseDto {
     private LocalDateTime updatedAt;
     List<CommentListResponseDto> commentList;
     private Integer share;
+    private boolean isMyPost;
 }

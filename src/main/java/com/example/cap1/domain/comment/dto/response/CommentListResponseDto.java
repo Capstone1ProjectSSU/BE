@@ -16,5 +16,6 @@ public class CommentListResponseDto {
     private String commentName;
     private String contents;
     private Float rating;
+    private boolean isMyComment;
     LocalDateTime createdAt;
 }

@@ -17,7 +17,7 @@ public class PostConverter {
                 .build();
     }
 
-    public static PostShareDetailResponseDto toPostShareDetailResponseDto(Post post, List<CommentListResponseDto> commentList) {
+    public static PostShareDetailResponseDto toPostShareDetailResponseDto(Post post, List<CommentListResponseDto> commentList, boolean isMyPost) {
         return PostShareDetailResponseDto.builder()
                 .postId(post.getId())
                 .postUserId(post.getUser().getId())
@@ -31,6 +31,7 @@ public class PostConverter {
                 .updatedAt(post.getUpdatedAt())
                 .commentList(commentList)
                 .share(post.getShare())
+                .isMyPost(isMyPost)
                 .build();
     }
 

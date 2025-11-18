@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 public class CreateCommentRequestDto {
-    private Long userId;
+//    private Long userId;
     private Float rating;
     private String content;
 
