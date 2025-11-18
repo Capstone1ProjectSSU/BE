@@ -32,27 +32,30 @@ public class CommentService {
         post.setRating(avgRating != null ? avgRating : 0.0f);
     }
 
-    public CreateCommentResponseDto addComment(Long postId, CreateCommentRequestDto requestDto) {
-        Post post = postRepository.findById(postId).orElseThrow(RuntimeException::new);
-        Long userId = requestDto.getUserId();
-        User user = userRepository.findById(userId).orElseThrow(RuntimeException::new);
+    public CreateCommentResponseDto addComment(Long postId, CreateCommentRequestDto requestDto, User user) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다"));
+
+        // 토큰에서 가져온 user 사용
         Comment comment = CommentConverter.toComment(user, post, requestDto);
         commentRepository.save(comment);
 
         post.incrementCommentCount();
-
         updatePostRating(post);
 
         return CommentConverter.toCreateCommentResponseDto(comment);
     }
 
-    public DeleteCommentResponseDto deleteComment(Long commentId) {
+    public DeleteCommentResponseDto deleteComment(Long commentId, User user) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> new RuntimeException("댓글을 찾을 수 없습니다"));
+
+        // 작성자 본인 확인
+        if (!comment.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("본인이 작성한 댓글만 삭제할 수 있습니다");
+        }
 
         Post post = comment.getPost();
-
-        // 댓글 삭제
         commentRepository.delete(comment);
 
         // 댓글 수 감소
@@ -62,7 +65,7 @@ public class CommentService {
         Long cnt = commentRepository.countByPostId(post.getId());
         if (cnt == 0L) {
             post.setRating(0.0f);
-            post.setCommentCount(0L); // 안전하게 0으로 맞춤
+            post.setCommentCount(0L);
         } else {
             Float avg = commentRepository.getAverageRatingByPost(post.getId());
             post.setRating(avg != null ? avg : 0.0f);
@@ -72,9 +75,14 @@ public class CommentService {
         return CommentConverter.toDeleteCommentResponseDto(comment);
     }
 
-    public UpdateCommentResponseDto updateComment(Long commentId, UpdateCommentRequestDto request) {
+    public UpdateCommentResponseDto updateComment(Long commentId, UpdateCommentRequestDto request, User user) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> new RuntimeException("댓글을 찾을 수 없습니다"));
+
+        // 작성자 본인 확인
+        if (!comment.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("본인이 작성한 댓글만 수정할 수 있습니다");
+        }
 
         comment.setContents(request.getContent());
         comment.setRating(request.getRating());

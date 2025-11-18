@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 @Builder
 public class UpdateCommentRequestDto {
 
-    private Long userId;
     private Float rating;
     private String content;
     private LocalDateTime updatedAt;
