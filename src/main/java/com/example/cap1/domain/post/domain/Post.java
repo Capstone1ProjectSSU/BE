@@ -34,6 +34,7 @@ public class Post extends BaseEntity {
     private Float rating;
     private Integer share;     // 공유 여부 1: 공개, 0: 비공개
 
+    @Setter
     @ColumnDefault("0")
     private Long commentCount;      // 댓글 수
 
@@ -46,6 +47,19 @@ public class Post extends BaseEntity {
 
     public void updateUnShare(){
         this.share = 0;
+    }
+
+    public void incrementCommentCount() {
+        if (this.commentCount == null) this.commentCount = 0L;
+        this.commentCount += 1;
+    }
+
+    public void decrementCommentCount() {
+        if (this.commentCount == null || this.commentCount <= 0) {
+            this.commentCount = 0L;
+            return;
+        }
+        this.commentCount -= 1;
     }
 
 }

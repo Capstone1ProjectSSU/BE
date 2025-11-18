@@ -24,6 +24,9 @@ public class Comment extends BaseEntity {
     @JoinColumn(name = "postId")
     private Post post;
 
+    @Setter
     private String contents;
+
+    @Setter
     private Float rating;
 }

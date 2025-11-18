@@ -4,10 +4,14 @@ import com.example.cap1.domain.comment.domain.Comment;
 import com.example.cap1.domain.comment.dto.request.CreateCommentRequestDto;
 import com.example.cap1.domain.comment.dto.response.CommentListResponseDto;
 import com.example.cap1.domain.comment.dto.response.CreateCommentResponseDto;
+import com.example.cap1.domain.comment.dto.response.DeleteCommentResponseDto;
+import com.example.cap1.domain.comment.dto.response.UpdateCommentResponseDto;
 import com.example.cap1.domain.post.domain.Post;
 import com.example.cap1.domain.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
 
 @RequiredArgsConstructor
 @Component
@@ -34,6 +38,19 @@ public class CommentConverter {
                 .contents(c.getContents())
                 .rating(c.getRating())
                 .createdAt(c.getCreatedAt())
+                .build();
+    }
+
+    public static DeleteCommentResponseDto toDeleteCommentResponseDto(Comment c) {
+        return DeleteCommentResponseDto.builder()
+                .commentId(c.getId())
+                .build();
+    }
+
+    public static UpdateCommentResponseDto toUpdateCommentResponseDto(Comment c) {
+        return UpdateCommentResponseDto.builder()
+                .commentId(c.getId())
+                .updatedAt(LocalDateTime.now())
                 .build();
     }
 }
