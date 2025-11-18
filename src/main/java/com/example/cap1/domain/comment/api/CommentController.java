@@ -1,6 +1,5 @@
 package com.example.cap1.domain.comment.api;
 
-import com.example.cap1.domain.comment.domain.Comment;
 import com.example.cap1.domain.comment.dto.request.CreateCommentRequestDto;
 import com.example.cap1.domain.comment.dto.response.CreateCommentResponseDto;
 import com.example.cap1.domain.comment.service.CommentService;
@@ -18,7 +17,7 @@ public class CommentController {
     @PostMapping("/{postId}")
     public ResponseDto<CreateCommentResponseDto> createComment(@PathVariable Long postId,
                                                                @RequestBody CreateCommentRequestDto requestDto) {
-        CreateCommentResponseDto result = commentService.createComment(postId, requestDto);
+        CreateCommentResponseDto result = commentService.addComment(postId, requestDto);
         return ResponseDto.of(result);
     }
 

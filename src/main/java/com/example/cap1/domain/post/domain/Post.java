@@ -29,6 +29,7 @@ public class Post extends BaseEntity {
     @JoinColumn(name = "sheet_id")
     private Sheet sheet;
 
+    @Setter
     @ColumnDefault("0.0")
     private Float rating;
     private Integer share;     // 공유 여부 1: 공개, 0: 비공개
@@ -46,4 +47,5 @@ public class Post extends BaseEntity {
     public void updateUnShare(){
         this.share = 0;
     }
+
 }
