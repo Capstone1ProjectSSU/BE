@@ -9,6 +9,7 @@ import com.example.cap1.domain.post.dto.response.PostListResponseDto;
 import com.example.cap1.domain.post.dto.response.PostShareDetailResponseDto;
 import com.example.cap1.domain.post.dto.response.PostShareResponseDto;
 import com.example.cap1.domain.post.repository.PostRepository;
+import com.example.cap1.domain.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,42 +26,46 @@ public class PostService {
 
     private final PostRepository postRepository;
 
-    public PostShareResponseDto updatePostShare(Long postId) {
-        Post post = postRepository.findById(postId).orElse(null);
-        if (post == null) {
-            return null;
-        } else{
-            post.updateShare();
+    public PostShareResponseDto updatePostShare(Long postId, User user) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다"));
+
+        // 본인 확인
+        if (!post.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("본인의 게시글만 공유할 수 있습니다");
         }
+
+        post.updateShare();
         return PostConverter.toPostShareResponseDto(post);
     }
 
-    public PostShareResponseDto updatePostUnShare(Long postId) {
-        Post post = postRepository.findById(postId).orElse(null);
-        if (post == null) {
-            return null;
-        } else{
-            post.updateUnShare();
+    public PostShareResponseDto updatePostUnShare(Long postId, User user) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다"));
+
+        // 본인 확인
+        if (!post.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("본인의 게시글만 공유 취소할 수 있습니다");
         }
+
+        post.updateUnShare();
         return PostConverter.toPostShareResponseDto(post);
     }
 
-    public PostShareDetailResponseDto getPostDetail(Long postId) {
-        Post post = postRepository.findById(postId).orElse(null);
+    public PostShareDetailResponseDto getPostDetail(Long postId, User user) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다"));
 
-        if (post == null) {
-            return null;
-        }
+        boolean isMyPost = post.getUser().getId().equals(user.getId());
 
         // 엔티티 컬렉션을 DTO 리스트로 변환 (null-safe)
         List<CommentListResponseDto> commentList = Optional.ofNullable(post.getCommentList())
                 .orElseGet(Collections::emptyList)
                 .stream()
-                // 필요하면 정렬: .sorted(Comparator.comparing(BaseEntity::getCreatedAt).reversed())
-                .map(CommentConverter::toCommentListResponseDto)
+                .map(comment -> CommentConverter.toCommentListResponseDto(comment, user))
                 .collect(Collectors.toList());
 
-        return PostConverter.toPostShareDetailResponseDto(post, commentList);
+        return PostConverter.toPostShareDetailResponseDto(post, commentList, isMyPost);
     }
 
     public PostBoardResponseDto getPostList() {

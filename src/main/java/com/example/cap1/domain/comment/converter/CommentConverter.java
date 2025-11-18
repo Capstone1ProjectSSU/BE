@@ -32,11 +32,13 @@ public class CommentConverter {
                 .build();
     }
 
-    public static CommentListResponseDto toCommentListResponseDto(Comment c) {
+    public static CommentListResponseDto toCommentListResponseDto(Comment c, User user) {
+        boolean isMyComment = c.getUser().getId().equals(user.getId()); // 내 댓글인지 확인
         return CommentListResponseDto.builder()
                 .commentId(c.getId())
                 .contents(c.getContents())
                 .rating(c.getRating())
+                .isMyComment(isMyComment) // true/false 전달
                 .createdAt(c.getCreatedAt())
                 .build();
     }
