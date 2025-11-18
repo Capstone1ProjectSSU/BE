@@ -32,6 +32,7 @@ public class CommentConverter {
         return CommentListResponseDto.builder()
                 .commentId(c.getId())
                 .contents(c.getContents())
+                .rating(c.getRating())
                 .createdAt(c.getCreatedAt())
                 .build();
     }
