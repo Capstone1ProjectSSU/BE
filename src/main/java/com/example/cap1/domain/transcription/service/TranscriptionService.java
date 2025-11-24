@@ -2,10 +2,14 @@ package com.example.cap1.domain.transcription.service;
 
 import com.example.cap1.domain.audio.domain.Audio;
 import com.example.cap1.domain.audio.repository.AudioRepository;
+import com.example.cap1.domain.sheet.domain.Difficulty;
+import com.example.cap1.domain.sheet.domain.Sheet;
+import com.example.cap1.domain.sheet.repository.SheetRepository;
 import com.example.cap1.domain.transcription.client.AiServerClient;
 import com.example.cap1.domain.transcription.domain.ProgressStage;
 import com.example.cap1.domain.transcription.domain.TranscriptionJob;
 import com.example.cap1.domain.transcription.dto.ai.AiEnqueueResponse;
+import com.example.cap1.domain.transcription.dto.ai.AiResultResponse;
 import com.example.cap1.domain.transcription.dto.request.TranscriptionRequest;
 import com.example.cap1.domain.transcription.dto.response.TranscriptionResponse;
 import com.example.cap1.domain.transcription.dto.response.TranscriptionStatusResponse;
@@ -35,6 +39,7 @@ public class TranscriptionService {
 
     private final TranscriptionJobRepository transcriptionJobRepository;
     private final AudioRepository audioRepository;
+    private final SheetRepository sheetRepository;
     private final AiServerClient aiServerClient;
 
     @Value("${file.transcription-dir:./uploads/transcription}")
@@ -274,5 +279,55 @@ public class TranscriptionService {
         }
 
         return builder.build();
+    }
+
+    /**
+     * 🆕 완료된 TranscriptionJob으로부터 Sheet 생성
+     */
+    @Transactional
+    public void createSheetFromCompletedJob(TranscriptionJob job, AiResultResponse result) {
+        log.info("Sheet 생성 시작 - jobId: {}, audioId: {}", job.getId(), job.getAudioId());
+
+        // 1. Audio 조회
+        Audio audio = audioRepository.findById(job.getAudioId())
+                .orElseThrow(() -> new GeneralException(Code.AUDIO_NOT_FOUND));
+
+        // 2. Metadata 추출
+        AiResultResponse.Metadata metadata = result.getOutputs().getMetadata();
+
+        Integer tempo = metadata != null ? metadata.getTempo() : null;
+        String key = metadata != null ? metadata.getKey() : null;
+        Long duration = metadata != null ? metadata.getDuration() : null;
+
+        // 3. Sheet 엔티티 생성
+        Sheet sheet = Sheet.builder()
+                .userId(job.getUserId())
+                .audioId(audio.getId())
+                .title(audio.getTitle())
+                .artist(audio.getArtist())
+                .instrument(job.getInstrument())
+                .difficulty(Difficulty.NORMAL)  // 기본값: 중급
+                .tuning("STANDARD")             // 기본값
+                .capo(0)                        // 기본값
+                .duration(duration)
+                .tempo(tempo)
+                .key(key)
+                .sheetDataUrl(buildSheetDataUrl(job.getAiJobId())) // 추후 구현
+                .build();
+
+        Sheet savedSheet = sheetRepository.save(sheet);
+
+        // 4. TranscriptionJob에 Sheet ID 연결
+        job.updateSheetId(savedSheet.getId());
+
+        log.info("✅ Sheet 생성 완료 - sheetId: {}, title: {}",
+                savedSheet.getId(), savedSheet.getTitle());
+    }
+
+    /**
+     * Sheet 데이터 URL 생성
+     */
+    private String buildSheetDataUrl(String aiJobId) {
+        return String.format("/api/transcription/download/%s/chords/json", aiJobId);
     }
 }
