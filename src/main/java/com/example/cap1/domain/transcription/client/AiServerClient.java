@@ -17,6 +17,12 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -30,6 +36,9 @@ public class AiServerClient {
 
     @Value("${file.upload-dir}")
     private String uploadDir;
+
+    @Value("${file.transcription-dir:./uploads/transcription}")
+    private String transcriptionDir;
 
     @Value("${ai.server.mock-mode:true}")
     private boolean mockMode;
@@ -49,7 +58,7 @@ public class AiServerClient {
     }
 
     /**
-     * 🆕 작업 상태 조회
+     * 작업 상태 조회
      */
     public AiStatusResponse getTaskStatus(String aiJobId) {
         if (mockMode) {
@@ -82,7 +91,7 @@ public class AiServerClient {
     }
 
     /**
-     * 🆕 작업 결과 조회
+     * 작업 결과 조회
      */
     public AiResultResponse getTaskResult(String aiJobId) {
         if (mockMode) {
@@ -110,6 +119,153 @@ public class AiServerClient {
             log.error("AI 서버 결과 조회 실패 - aiJobId: {}", aiJobId, e);
             throw new GeneralException(Code.AI_SERVER_ERROR,
                     "AI 서버 결과 조회 실패: " + e.getMessage());
+        }
+    }
+
+    // ========== 🆕 파일 다운로드 메서드들 ==========
+
+    /**
+     * 모든 결과 파일을 다운로드
+     */
+    public void downloadAllFiles(String aiJobId, AiResultResponse result) {
+        try {
+            // 저장 디렉토리 생성
+            Path baseDir = Paths.get(transcriptionDir).resolve(aiJobId);
+            Files.createDirectories(baseDir);
+
+            log.info("결과 파일 다운로드 시작 - aiJobId: {}, baseDir: {}", aiJobId, baseDir);
+
+            // 1. 음원 분리 파일들
+            downloadSeparatedTracks(aiJobId, result.getOutputs().getSeparatedTracks(), baseDir);
+
+            // 2. MIDI 파일
+            downloadMidi(aiJobId, result.getOutputs().getTranscriptionUrl(), baseDir);
+
+            // 3. 코드 진행 파일들
+            downloadChordProgression(aiJobId, result.getOutputs().getChordProgression(), baseDir);
+
+            log.info("✅ 모든 결과 파일 다운로드 완료 - aiJobId: {}", aiJobId);
+
+        } catch (IOException e) {
+            log.error("파일 다운로드 실패 - aiJobId: {}", aiJobId, e);
+            throw new GeneralException(Code.INTERNAL_ERROR, "파일 다운로드 실패: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 음원 분리 파일들 다운로드
+     */
+    private void downloadSeparatedTracks(String aiJobId,
+                                         AiResultResponse.SeparatedTracks tracks,
+                                         Path baseDir) throws IOException {
+        if (tracks == null) {
+            log.warn("음원 분리 결과 없음 - 스킵");
+            return;
+        }
+
+        Path separatedDir = baseDir.resolve("separated");
+        Files.createDirectories(separatedDir);
+
+        // Guitar
+        if (tracks.getGuitarTrackUrl() != null) {
+            downloadFile(tracks.getGuitarTrackUrl(),
+                    separatedDir.resolve("guitar.opus"));
+        }
+
+        // Bass
+        if (tracks.getBassTrackUrl() != null) {
+            downloadFile(tracks.getBassTrackUrl(),
+                    separatedDir.resolve("bass.opus"));
+        }
+
+        // Vocal
+        if (tracks.getVocalTrackUrl() != null) {
+            downloadFile(tracks.getVocalTrackUrl(),
+                    separatedDir.resolve("vocal.opus"));
+        }
+
+        // Drums
+        if (tracks.getDrumsTrackUrl() != null) {
+            downloadFile(tracks.getDrumsTrackUrl(),
+                    separatedDir.resolve("drums.opus"));
+        }
+
+        log.info("✅ 음원 분리 파일 다운로드 완료");
+    }
+
+    /**
+     * MIDI 파일 다운로드
+     */
+    private void downloadMidi(String aiJobId, String midiUrl, Path baseDir) throws IOException {
+        if (midiUrl == null) {
+            log.warn("MIDI 파일 URL 없음 - 스킵");
+            return;
+        }
+
+        Path midiPath = baseDir.resolve("transcription.mid");
+        downloadFile(midiUrl, midiPath);
+
+        log.info("✅ MIDI 파일 다운로드 완료");
+    }
+
+    /**
+     * 코드 진행 파일들 다운로드
+     */
+    private void downloadChordProgression(String aiJobId,
+                                          AiResultResponse.ChordProgression chords,
+                                          Path baseDir) throws IOException {
+        if (chords == null) {
+            log.warn("코드 진행 결과 없음 - 스킵");
+            return;
+        }
+
+        // JSON 파일
+        if (chords.getJsonUrl() != null) {
+            downloadFile(chords.getJsonUrl(),
+                    baseDir.resolve("chord_progression.json"));
+        }
+
+        // TXT 파일
+        if (chords.getTxtUrl() != null) {
+            downloadFile(chords.getTxtUrl(),
+                    baseDir.resolve("chord_progression.txt"));
+        }
+
+        log.info("✅ 코드 진행 파일 다운로드 완료");
+    }
+
+    /**
+     * 단일 파일 다운로드 (공통 메서드)
+     */
+    private void downloadFile(String url, Path localPath) throws IOException {
+        if (mockMode) {
+            log.debug("Mock 모드 - 파일 다운로드 스킵: {}", localPath.getFileName());
+            return;
+        }
+
+        try {
+            log.debug("파일 다운로드 시작 - URL: {}, localPath: {}", url, localPath);
+
+            // AI 서버에서 파일 다운로드
+            ResponseEntity<byte[]> response = restTemplate.getForEntity(
+                    aiServerBaseUrl + url,
+                    byte[].class
+            );
+
+            byte[] fileBytes = response.getBody();
+            if (fileBytes == null || fileBytes.length == 0) {
+                throw new IOException("다운로드된 파일이 비어있습니다: " + url);
+            }
+
+            // 로컬 파일로 저장
+            Files.write(localPath, fileBytes);
+
+            log.debug("✅ 파일 다운로드 완료 - size: {} bytes, path: {}",
+                    fileBytes.length, localPath);
+
+        } catch (RestClientException e) {
+            log.error("파일 다운로드 실패 - URL: {}", url, e);
+            throw new IOException("파일 다운로드 실패: " + e.getMessage(), e);
         }
     }
 
@@ -204,7 +360,7 @@ public class AiServerClient {
     }
 
     /**
-     * 🆕 Mock Result 응답 생성
+     * Mock Result 응답 생성
      */
     private AiResultResponse createMockResultResponse(String aiJobId) {
         // Mock 데이터 생성

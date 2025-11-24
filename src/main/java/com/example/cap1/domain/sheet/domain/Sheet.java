@@ -53,8 +53,7 @@ public class Sheet extends BaseEntity {
     @Column(name = "sheetDataUrl", length = 500)
     private String sheetDataUrl;
 
-    @Column(name = "thumbnailUrl", length = 500)
-    private String thumbnailUrl;
+    // ❌ thumbnailUrl 필드 제거됨
 
     /**
      * 악보 정보를 수정합니다.
