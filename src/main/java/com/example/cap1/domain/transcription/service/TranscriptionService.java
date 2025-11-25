@@ -2,6 +2,9 @@ package com.example.cap1.domain.transcription.service;
 
 import com.example.cap1.domain.audio.domain.Audio;
 import com.example.cap1.domain.audio.repository.AudioRepository;
+import com.example.cap1.domain.post.converter.PostConverter;
+import com.example.cap1.domain.post.domain.Post;
+import com.example.cap1.domain.post.repository.PostRepository;
 import com.example.cap1.domain.sheet.domain.Difficulty;
 import com.example.cap1.domain.sheet.domain.Sheet;
 import com.example.cap1.domain.sheet.repository.SheetRepository;
@@ -14,6 +17,8 @@ import com.example.cap1.domain.transcription.dto.request.TranscriptionRequest;
 import com.example.cap1.domain.transcription.dto.response.TranscriptionResponse;
 import com.example.cap1.domain.transcription.dto.response.TranscriptionStatusResponse;
 import com.example.cap1.domain.transcription.repository.TranscriptionJobRepository;
+import com.example.cap1.domain.user.domain.User;
+import com.example.cap1.domain.user.repository.UserRepository;
 import com.example.cap1.global.exception.GeneralException;
 import com.example.cap1.global.response.Code;
 import jakarta.annotation.PostConstruct;
@@ -30,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -41,6 +47,8 @@ public class TranscriptionService {
     private final AudioRepository audioRepository;
     private final SheetRepository sheetRepository;
     private final AiServerClient aiServerClient;
+    private final PostRepository postRepository;
+    private final UserRepository userRepository;
 
     @Value("${file.transcription-dir:./uploads/transcription}")
     private String transcriptionDir;
@@ -316,6 +324,10 @@ public class TranscriptionService {
                 .build();
 
         Sheet savedSheet = sheetRepository.save(sheet);
+
+        User user = userRepository.getById(savedSheet.getUserId());
+        Post post = PostConverter.toPost(savedSheet, user);
+        postRepository.save(post);
 
         // 4. TranscriptionJob에 Sheet ID 연결
         job.updateSheetId(savedSheet.getId());
