@@ -56,6 +56,8 @@ public class PostConverter {
                 .user(user)
                 .sheet(sheet)
                 .share(0)
+                .commentCount(0L)
+                .rating(0.0F)
                 .build();
     }
 

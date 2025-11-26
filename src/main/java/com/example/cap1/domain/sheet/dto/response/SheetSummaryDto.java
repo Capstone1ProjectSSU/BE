@@ -33,7 +33,7 @@ public class SheetSummaryDto {
                 .artist(sheet.getArtist())
                 .instrument(sheet.getInstrument())
                 .difficulty(sheet.getDifficulty())
-                .thumbnailUrl(sheet.getThumbnailUrl())
+//                .thumbnailUrl(sheet.getThumbnailUrl())
                 .createdAt(sheet.getCreatedAt())
                 .build();
     }
