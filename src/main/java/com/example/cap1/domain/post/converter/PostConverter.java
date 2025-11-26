@@ -5,6 +5,8 @@ import com.example.cap1.domain.post.domain.Post;
 import com.example.cap1.domain.post.dto.response.PostListResponseDto;
 import com.example.cap1.domain.post.dto.response.PostShareDetailResponseDto;
 import com.example.cap1.domain.post.dto.response.PostShareResponseDto;
+import com.example.cap1.domain.sheet.domain.Sheet;
+import com.example.cap1.domain.user.domain.User;
 
 import java.util.List;
 
@@ -46,6 +48,16 @@ public class PostConverter {
                 .commentCount(p.getCommentCount())
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())
+                .build();
+    }
+
+    public static Post toPost(Sheet sheet, User user) {
+        return Post.builder()
+                .user(user)
+                .sheet(sheet)
+                .share(0)
+                .commentCount(0L)
+                .rating(0.0F)
                 .build();
     }
 
