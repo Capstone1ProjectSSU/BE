@@ -4,10 +4,12 @@ import com.example.cap1.domain.transcription.dto.request.TranscriptionRequest;
 import com.example.cap1.domain.transcription.dto.response.TranscriptionResponse;
 import com.example.cap1.domain.transcription.dto.response.TranscriptionStatusResponse;
 import com.example.cap1.domain.transcription.service.TranscriptionService;
+import com.example.cap1.domain.user.domain.User;
 import com.example.cap1.global.response.ResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -29,13 +31,13 @@ public class TranscriptionController {
     @PostMapping("/request")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ResponseDto<TranscriptionResponse> requestTranscription(
-            @RequestBody TranscriptionRequest request
-            // TODO: JWT 구현 후 @AuthenticationPrincipal User user 추가
+            @RequestBody TranscriptionRequest request,
+            @AuthenticationPrincipal User user
     ) {
         log.info("악보 생성 요청 API 호출 - audioId: {}, instrument: {}",
                 request.getAudioId(), request.getInstrument());
 
-        Long userId = 1L; // TODO: JWT에서 추출
+        Long userId = user.getId();
 
         TranscriptionResponse response = transcriptionService
                 .requestTranscription(userId, request);
@@ -53,12 +55,12 @@ public class TranscriptionController {
      */
     @GetMapping("/status/{jobId}")
     public ResponseDto<TranscriptionStatusResponse> getTranscriptionStatus(
-            @PathVariable Long jobId
-            // TODO: JWT 구현 후 @AuthenticationPrincipal User user 추가
+            @PathVariable Long jobId,
+            @AuthenticationPrincipal User user
     ) {
         log.info("악보 생성 상태 조회 API 호출 - jobId: {}", jobId);
 
-        Long userId = 1L; // TODO: JWT에서 추출
+        Long userId = user.getId();
 
         TranscriptionStatusResponse response = transcriptionService
                 .getTranscriptionStatus(jobId, userId);

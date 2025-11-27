@@ -5,11 +5,13 @@ import com.example.cap1.domain.sheet.dto.request.SheetUpdateRequest;
 import com.example.cap1.domain.sheet.dto.response.SheetDetailResponse;
 import com.example.cap1.domain.sheet.dto.response.SheetListResponse;
 import com.example.cap1.domain.sheet.service.SheetService;
+import com.example.cap1.domain.user.domain.User;
 import com.example.cap1.global.response.ApiResponse;
 import com.example.cap1.global.response.Code;
 import com.example.cap1.global.response.ResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -65,12 +67,12 @@ public class SheetController {
     @PutMapping("/{musicId}")
     public ResponseDto<SheetDetailResponse> updateSheet(
             @PathVariable Long musicId,
-            @RequestBody SheetUpdateRequest request
-            // TODO: JWT 구현 후 @AuthenticationPrincipal User user 추가
+            @RequestBody SheetUpdateRequest request,
+            @AuthenticationPrincipal User user
     ) {
         log.info("악보 수정 API 호출 - musicId: {}", musicId);
 
-        Long userId = 1L; // TODO: JWT에서 추출
+        Long userId = user.getId();
 
         SheetDetailResponse response = sheetService.updateSheet(musicId, userId, request);
 
@@ -82,11 +84,12 @@ public class SheetController {
      */
     @DeleteMapping("/{musicId}")
     public ApiResponse deleteSheet(
-            @PathVariable Long musicId
+            @PathVariable Long musicId,
+            @AuthenticationPrincipal User user
     ) {
         log.info("악보 삭제 API 호출 - musicId: {}", musicId);
 
-        Long userId = 1L; // TODO: JWT에서 추출
+        Long userId = user.getId();
 
         sheetService.deleteSheet(musicId, userId);
 
