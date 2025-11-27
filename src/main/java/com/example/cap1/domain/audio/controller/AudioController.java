@@ -3,10 +3,13 @@ package com.example.cap1.domain.audio.controller;
 import com.example.cap1.domain.audio.dto.request.AudioUploadRequest;
 import com.example.cap1.domain.audio.dto.response.AudioUploadResponse;
 import com.example.cap1.domain.audio.service.AudioService;
+import com.example.cap1.domain.user.domain.User;
+import com.example.cap1.domain.user.repository.UserRepository;
 import com.example.cap1.global.response.ResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -28,13 +31,12 @@ public class AudioController {
      */
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseDto<AudioUploadResponse> uploadAudio(
-            @ModelAttribute AudioUploadRequest request
-            // TODO: JWT 구현 후 @AuthenticationPrincipal User user 추가
+            @ModelAttribute AudioUploadRequest request,
+            @AuthenticationPrincipal User user
     ) {
         log.info("음원 업로드 API 호출 - title: {}", request.getSongTitle());
 
-        // TODO: JWT에서 userId 추출, 현재는 임시로 1L 사용
-        Long userId = 1L;
+        Long userId = user.getId();
 
         AudioUploadResponse response = audioService.uploadAudio(userId, request);
 

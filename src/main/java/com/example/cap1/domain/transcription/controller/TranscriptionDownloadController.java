@@ -1,5 +1,6 @@
 package com.example.cap1.domain.transcription.controller;
 
+import com.example.cap1.domain.user.domain.User;
 import com.example.cap1.global.exception.GeneralException;
 import com.example.cap1.global.response.Code;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.Path;
@@ -83,8 +85,8 @@ public class TranscriptionDownloadController {
      */
     @GetMapping("/{aiJobId}/midi")
     public ResponseEntity<Resource> downloadMidi(
-            @PathVariable String aiJobId
-            // TODO: JWT 구현 후 @AuthenticationPrincipal User user 추가
+            @PathVariable String aiJobId,
+            @AuthenticationPrincipal User user
     ) {
         log.info("MIDI 파일 다운로드 요청 - aiJobId: {}", aiJobId);
 
@@ -122,8 +124,8 @@ public class TranscriptionDownloadController {
     @GetMapping("/{aiJobId}/chords/{format}")
     public ResponseEntity<Resource> downloadChords(
             @PathVariable String aiJobId,
-            @PathVariable String format  // "json" or "txt"
-            // TODO: JWT 구현 후 @AuthenticationPrincipal User user 추가
+            @PathVariable String format,  // "json" or "txt"
+            @AuthenticationPrincipal User user
     ) {
         log.info("코드 진행 파일 다운로드 요청 - aiJobId: {}, format: {}", aiJobId, format);
 
