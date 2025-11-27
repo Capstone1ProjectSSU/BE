@@ -41,6 +41,11 @@ public class Post extends BaseEntity {
     @OneToMany(mappedBy = "post")
     private List<Comment> commentList = new ArrayList<>();
 
+    // Post 삭제 시 댓글도 함께 삭제
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Comment> comments = new ArrayList<>();
+
     public void updateShare(){
         this.share = 1;
     }
