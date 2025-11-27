@@ -1,6 +1,7 @@
 package com.example.cap1.domain.user.api;
 
 
+import com.example.cap1.domain.user.domain.User;
 import com.example.cap1.domain.user.dto.request.JwtResponse;
 import com.example.cap1.domain.user.dto.request.LoginRequest;
 import com.example.cap1.domain.user.dto.response.MessageResponse;
@@ -16,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -92,5 +94,24 @@ public class AuthController {
             return ResponseEntity.badRequest().body(new MessageResponse("인증되지 않은 사용자입니다"));
         }
         return ResponseEntity.ok(new MessageResponse("현재 사용자: " + authentication.getName()));
+    }
+
+    /**
+     * 회원탈퇴
+     */
+    @Operation(summary = "회원탈퇴", description = "회원을 탈퇴합니다. 작성한 모든 게시글과 댓글이 삭제됩니다")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "회원탈퇴 성공"),
+            @ApiResponse(responseCode = "400", description = "회원탈퇴 실패")
+    })
+    @DeleteMapping("/withdraw")
+    public ResponseEntity<?> withdrawUser(@AuthenticationPrincipal User user) {
+        try {
+            authService.withdrawUser(user);
+            SecurityContextHolder.clearContext();
+            return ResponseEntity.ok(new MessageResponse("회원탈퇴가 완료되었습니다"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
     }
 }

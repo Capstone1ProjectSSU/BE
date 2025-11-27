@@ -37,4 +37,11 @@ public class AuthService {
 
         userRepository.save(user);
     }
+
+    @Transactional
+    public void withdrawUser(User user) {
+        // User 엔티티에서 cascade 설정이 되어 있다면
+        // 사용자 삭제 시 자동으로 Post, Comment도 삭제됨
+        userRepository.delete(user);
+    }
 }
