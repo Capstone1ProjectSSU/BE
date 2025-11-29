@@ -1,4 +1,4 @@
-package com.example.cap1.domain.sheet.controller;
+package com.example.cap1.domain.transcription.controller;
 
 import com.example.cap1.domain.transcription.domain.JobType;
 import com.example.cap1.domain.transcription.service.DifficultyService;
