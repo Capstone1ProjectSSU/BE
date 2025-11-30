@@ -41,7 +41,8 @@ public class AiServerClient {
     @Value("${file.transcription-dir:./uploads/transcription}")
     private String transcriptionDir;
 
-    @Value("${ai.server.mock-mode:true}")
+    // 🚀 수정 1: 기본값을 false로 변경하여 배포 시 실수 방지
+    @Value("${ai.server.mock-mode:false}")
     private boolean mockMode;
 
     private final RestTemplate restTemplate;
@@ -79,8 +80,14 @@ public class AiServerClient {
 
             body.add("chord_file", new FileSystemResource(jsonFile));
 
+            // 🚀 수정 2: 작업 타입에 따라 필요한 파라미터 추가
             if (jobType == JobType.EASIER) {
+                // 쉬운 모드: 악기 지정 (기존 로직)
                 body.add("target_instrument", "guitar");
+            } else if (jobType == JobType.HARDER) {
+                // 🚀 어려운 모드: target_style 필수 파라미터 추가
+                // AI 서버 에러 해결을 위해 추가함. 유효한 값은 AI 팀에 확인 필요 (예: "jazz", "standard" 등)
+                body.add("target_style", "jazz");
             }
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
@@ -151,6 +158,8 @@ public class AiServerClient {
     private File resolveFileFromUrl(String url) {
         try {
             if (url == null) return null;
+            // url 예시: /api/transcription/download/{aiJobId}/chords/json
+            // parts[0]='', parts[1]='api', parts[2]='transcription', parts[3]='download', parts[4]='{aiJobId}'
             String[] parts = url.split("/");
             if (parts.length < 5) return null;
             String aiJobId = parts[4];

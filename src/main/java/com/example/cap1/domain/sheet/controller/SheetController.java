@@ -27,12 +27,13 @@ public class SheetController {
      */
     @GetMapping
     public ResponseDto<SheetListResponse> getSheetList(
-            @ModelAttribute SheetSearchRequest request
+            @ModelAttribute SheetSearchRequest request,
+            @AuthenticationPrincipal User user // 🚀 추가
     ) {
         log.info("악보 목록 조회 API 호출 - keyword: {}, page: {}",
                 request.getKeyword(), request.getPage());
 
-        Long userId = 1L; // TODO: JWT에서 추출
+        Long userId = user.getId(); // 🚀 수정 (하드코딩 1L 제거)
 
         SheetListResponse response = sheetService.getSheetList(userId, request);
 
@@ -44,11 +45,12 @@ public class SheetController {
      */
     @GetMapping("/{musicId}")
     public ResponseDto<SheetDetailResponse> getSheetDetail(
-            @PathVariable Long musicId
+            @PathVariable Long musicId,
+            @AuthenticationPrincipal User user // 🚀 추가
     ) {
         log.info("악보 상세 조회 API 호출 - musicId: {}", musicId);
 
-        Long userId = 1L; // TODO: JWT에서 추출
+        Long userId = user.getId(); // 🚀 수정 (하드코딩 1L 제거)
 
         SheetDetailResponse response = sheetService.getSheetDetail(musicId, userId);
 
@@ -57,12 +59,6 @@ public class SheetController {
 
     /**
      * 악보 정보를 수정합니다.
-     *
-     * PUT /api/sheets/{musicId}
-     *
-     * @param musicId 악보 ID
-     * @param request 수정할 정보
-     * @return 수정된 악보 상세 정보
      */
     @PutMapping("/{musicId}")
     public ResponseDto<SheetDetailResponse> updateSheet(

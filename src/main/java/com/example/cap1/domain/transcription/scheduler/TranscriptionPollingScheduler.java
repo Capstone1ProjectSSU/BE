@@ -1,8 +1,5 @@
 package com.example.cap1.domain.transcription.scheduler;
 
-import com.example.cap1.domain.sheet.domain.Difficulty;
-import com.example.cap1.domain.sheet.domain.Sheet;
-import com.example.cap1.domain.sheet.repository.SheetRepository;
 import com.example.cap1.domain.transcription.client.AiServerClient;
 import com.example.cap1.domain.transcription.domain.JobType;
 import com.example.cap1.domain.transcription.domain.ProgressStage;
@@ -10,6 +7,7 @@ import com.example.cap1.domain.transcription.domain.TranscriptionJob;
 import com.example.cap1.domain.transcription.dto.ai.AiResultResponse;
 import com.example.cap1.domain.transcription.dto.ai.AiStatusResponse;
 import com.example.cap1.domain.transcription.repository.TranscriptionJobRepository;
+import com.example.cap1.domain.transcription.service.DifficultyService;
 import com.example.cap1.domain.transcription.service.TranscriptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +25,7 @@ public class TranscriptionPollingScheduler {
     private final TranscriptionJobRepository jobRepository;
     private final AiServerClient aiServerClient;
     private final TranscriptionService transcriptionService;
-    private final SheetRepository sheetRepository;
+    private final DifficultyService difficultyService;
 
     @Scheduled(fixedDelay = 3000)
     @Transactional
@@ -48,26 +46,22 @@ public class TranscriptionPollingScheduler {
     }
 
     private void processJob(TranscriptionJob job) {
-        try {
-            AiStatusResponse aiStatus = aiServerClient.getTaskStatus(job.getAiJobId(), job.getJobType());
+        AiStatusResponse aiStatus = aiServerClient.getTaskStatus(job.getAiJobId(), job.getJobType());
 
-            if (aiStatus.getProgressPercent() != null) {
-                job.updateProgressPercent(aiStatus.getProgressPercent());
-            }
+        if (aiStatus.getProgressPercent() != null) {
+            job.updateProgressPercent(aiStatus.getProgressPercent());
+        }
 
-            String statusStr = aiStatus.getStatus();
-            if ("completed".equalsIgnoreCase(statusStr)) {
-                handleCompletedJob(job);
-            } else if ("failed".equalsIgnoreCase(statusStr)) {
-                job.updateStatus(ProgressStage.FAILED);
-                String errorMsg = (aiStatus.getError() != null) ? aiStatus.getError().getMessage() : "AI Server reported FAILED status.";
-                job.updateErrorMessage(errorMsg);
-                log.warn("Job {} failed by AI Server: {}", job.getId(), errorMsg);
-            }
+        String statusStr = aiStatus.getStatus();
+        if ("completed".equalsIgnoreCase(statusStr)) {
+            handleCompletedJob(job);
+        } else if ("failed".equalsIgnoreCase(statusStr)) {
+            job.updateStatus(ProgressStage.FAILED);
+            String errorMsg = (aiStatus.getError() != null) ? aiStatus.getError().getMessage() : "AI Server reported FAILED status.";
+            job.updateErrorMessage(errorMsg);
             jobRepository.save(job);
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to poll status: " + e.getMessage(), e);
+        } else {
+            jobRepository.save(job); // 진행률 업데이트 저장
         }
     }
 
@@ -76,41 +70,18 @@ public class TranscriptionPollingScheduler {
 
         AiResultResponse result = aiServerClient.getTaskResult(job.getAiJobId(), job.getJobType());
 
+        // 작업 타입에 따라 적절한 서비스로 위임 (Delegation)
         if (job.getJobType() == JobType.TRANSCRIPTION) {
             aiServerClient.downloadAllFiles(job.getAiJobId(), result);
-            transcriptionService.createSheetFromCompletedJob(job, result);
+            transcriptionService.completeTranscriptionJob(job, result);
         } else {
+            // EASIER, HARDER
             aiServerClient.downloadChordOnly(job.getAiJobId(), result, job.getJobType());
-            createDerivedSheet(job, result);
+            difficultyService.completeDifficultyJob(job, result);
         }
 
         job.updateStatus(ProgressStage.COMPLETED);
         job.updateProgressPercent(100);
-        log.info("Job Result Processed [JobId: {}]", job.getId());
-    }
-
-    private void createDerivedSheet(TranscriptionJob job, AiResultResponse result) {
-        Long originSheetId = job.getSheetId();
-        Sheet originSheet = sheetRepository.findById(originSheetId)
-                .orElseThrow(() -> new RuntimeException("Original sheet not found: " + originSheetId));
-
-        Difficulty newDifficulty = (job.getJobType() == JobType.EASIER) ? Difficulty.EASY : Difficulty.HARD;
-        String titleSuffix = (job.getJobType() == JobType.EASIER) ? " (Easy)" : " (Hard)";
-
-        String downloadPath = "/api/transcription/download/" + job.getAiJobId() + "/chords/json";
-
-        Sheet newSheet = Sheet.builder()
-                .userId(job.getUserId())
-                .audioId(job.getAudioId())
-                .title(originSheet.getTitle() + titleSuffix)
-                .artist(originSheet.getArtist())
-                .instrument(job.getInstrument())
-                .difficulty(newDifficulty)
-                .sheetDataUrl(downloadPath)
-                .key(originSheet.getKey())
-                .build();
-
-        Sheet saved = sheetRepository.save(newSheet);
-        job.updateSheetId(saved.getId());
+        log.info("Job Result Processed & Saved [JobId: {}]", job.getId());
     }
 }

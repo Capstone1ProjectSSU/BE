@@ -9,6 +9,7 @@ import com.example.cap1.domain.sheet.domain.Difficulty;
 import com.example.cap1.domain.sheet.domain.Sheet;
 import com.example.cap1.domain.sheet.repository.SheetRepository;
 import com.example.cap1.domain.transcription.client.AiServerClient;
+import com.example.cap1.domain.transcription.domain.JobType;
 import com.example.cap1.domain.transcription.domain.ProgressStage;
 import com.example.cap1.domain.transcription.domain.TranscriptionJob;
 import com.example.cap1.domain.transcription.dto.ai.AiEnqueueResponse;
@@ -25,14 +26,11 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.FileSystemUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -52,7 +50,7 @@ public class TranscriptionService {
     @Value("${file.transcription-dir:./uploads/transcription}")
     private String transcriptionDir;
 
-    @Value("${ai.server.mock-mode:true}")
+    @Value("${ai.server.mock-mode:false}")
     private boolean mockMode;
 
     @PostConstruct
@@ -65,15 +63,7 @@ public class TranscriptionService {
         }
     }
 
-    private void copyDummyFilesForJob(String aiJobId) {
-        if (!mockMode) return;
-        try {
-            // 더미 파일 복사 로직 (필요 시 구현)
-        } catch (Exception e) {
-            log.warn("더미 파일 복사 실패: {}", e.getMessage());
-        }
-    }
-
+    // --- E2E Enqueue Logic ---
     @Transactional
     public TranscriptionResponse requestTranscription(Long userId, TranscriptionRequest request) {
         request.validate();
@@ -102,11 +92,7 @@ public class TranscriptionService {
             savedJob.updateAiJobId(aiResponse.getJobId());
             savedJob.updateStatus(ProgressStage.PROCESSING);
             savedJob.updateProgressPercent(0);
-            transcriptionJobRepository.save(savedJob);
-
-            copyDummyFilesForJob(aiResponse.getJobId());
-
-            return TranscriptionResponse.from(savedJob);
+            return TranscriptionResponse.from(transcriptionJobRepository.save(savedJob));
         } catch (GeneralException e) {
             savedJob.updateStatus(ProgressStage.FAILED);
             savedJob.updateErrorMessage(e.getMessage());
@@ -115,6 +101,7 @@ public class TranscriptionService {
         }
     }
 
+    // --- Unified Status Logic ---
     public TranscriptionStatusResponse getTranscriptionStatus(Long jobId, Long userId) {
         TranscriptionJob job = transcriptionJobRepository.findById(jobId)
                 .orElseThrow(() -> new GeneralException(Code.JOB_NOT_FOUND));
@@ -123,48 +110,63 @@ public class TranscriptionService {
             throw new GeneralException(Code.JOB_FORBIDDEN);
         }
 
-        String currentStage = determineCurrentStage(job);
-        TranscriptionStatusResponse.AvailableResults availableResults = buildAvailableResults(job);
+        String transcriptionUrl = null;
+        String separatedAudioUrl = null;
+        String chordProgressionUrl = null;
+        String musicId = null;
 
-        return TranscriptionStatusResponse.from(job, currentStage, availableResults);
-    }
+        // 완료된 경우 URL 생성
+        if (job.getProgressStage() == ProgressStage.COMPLETED) {
+            String aiJobId = job.getAiJobId();
 
-    private String determineCurrentStage(TranscriptionJob job) {
-        if (job.getProgressStage() == ProgressStage.COMPLETED) return "completed";
-        return "processing"; // 단순화
-    }
+            // 공통: 코드 진행 URL
+            chordProgressionUrl = "/api/transcription/download/" + aiJobId + "/chords/json";
 
-    private TranscriptionStatusResponse.AvailableResults buildAvailableResults(TranscriptionJob job) {
-        if (job.getProgressStage() != ProgressStage.COMPLETED) return null;
+            // E2E 작업일 경우에만 MIDI와 분리된 오디오 URL 제공
+            if (job.getJobType() == JobType.TRANSCRIPTION) {
+                String instrument = job.getInstrument() != null ? job.getInstrument() : "guitar";
+                transcriptionUrl = "/api/transcription/download/" + aiJobId + "/midi";
+                separatedAudioUrl = "/api/transcription/download/" + aiJobId + "/separated/" + instrument;
+            }
 
-        String aiJobId = job.getAiJobId();
-        return TranscriptionStatusResponse.AvailableResults.builder()
-                .separatedTracks(TranscriptionStatusResponse.AvailableResults.SeparatedTracks.builder()
-                        .guitarUrl("/api/transcription/download/" + aiJobId + "/separated/guitar")
-                        .bassUrl("/api/transcription/download/" + aiJobId + "/separated/bass")
-                        .vocalUrl("/api/transcription/download/" + aiJobId + "/separated/vocal")
-                        .drumsUrl("/api/transcription/download/" + aiJobId + "/separated/drums")
-                        .build())
-                .midiUrl("/api/transcription/download/" + aiJobId + "/midi")
-                .chordProgression(TranscriptionStatusResponse.AvailableResults.ChordProgression.builder()
-                        .jsonUrl("/api/transcription/download/" + aiJobId + "/chords/json")
-                        .txtUrl("/api/transcription/download/" + aiJobId + "/chords/txt")
-                        .build())
+            if (job.getSheetId() != null) {
+                musicId = String.valueOf(job.getSheetId());
+            }
+        }
+
+        return TranscriptionStatusResponse.builder()
+                .jobId(String.valueOf(job.getId()))
+                .aiJobId(job.getAiJobId())
+                .status(job.getProgressStage())
+                .progressPercent(job.getProgressPercent())
+                .instrument(job.getInstrument())
+                .jobType(job.getJobType().name())
+                .musicId(musicId)
+                // Flat Structure
+                .transcriptionUrl(transcriptionUrl)
+                .separatedAudioUrl(separatedAudioUrl)
+                .chordProgressionUrl(chordProgressionUrl)
+                .format("json")
+                .errorMessage(job.getErrorMessage())
+                .queuedAt(job.getQueuedAt())
+                .startedAt(job.getStartedAt())
+                .completedAt(job.getCompletedAt())
+                .failedAt(job.getFailedAt())
+                .updatedAt(job.getUpdatedAt())
                 .build();
     }
 
+    // --- Scheduler Delegation Method ---
     @Transactional
-    public void createSheetFromCompletedJob(TranscriptionJob job, AiResultResponse result) {
+    public void completeTranscriptionJob(TranscriptionJob job, AiResultResponse result) {
         Audio audio = audioRepository.findById(job.getAudioId())
                 .orElseThrow(() -> new GeneralException(Code.AUDIO_NOT_FOUND));
 
-        // 🆕 수정: Metadata 제거, Key 정보는 UnifiedProgression에서 가져오거나 없으면 null
         String key = null;
         if (result.getUnifiedProgression() != null) {
             key = result.getUnifiedProgression().getKey();
         }
 
-        // 🆕 수정: tuning, capo, duration, tempo 필드 제거됨
         Sheet sheet = Sheet.builder()
                 .userId(job.getUserId())
                 .audioId(audio.getId())
@@ -173,7 +175,6 @@ public class TranscriptionService {
                 .instrument(job.getInstrument())
                 .difficulty(Difficulty.NORMAL)
                 .key(key)
-                // sheetDataUrl 설정 (다운로드 API 경로)
                 .sheetDataUrl("/api/transcription/download/" + job.getAiJobId() + "/chords/json")
                 .build();
 
