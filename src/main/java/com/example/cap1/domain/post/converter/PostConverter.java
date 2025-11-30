@@ -46,6 +46,7 @@ public class PostConverter {
                 .difficulty(p.getSheet() != null ? p.getSheet().getDifficulty() : null)
                 .rating(p.getRating())
                 .commentCount(p.getCommentCount())
+                .share(p.getShare())
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())
                 .build();

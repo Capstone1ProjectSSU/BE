@@ -17,6 +17,7 @@ public class PostListResponseDto {
     private Difficulty difficulty;
     private Float rating;
     private Long commentCount;
+    private Integer share;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
