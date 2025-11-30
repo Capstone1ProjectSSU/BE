@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class SheetDetailResponse {
 
-    private String musicId;
+    private String sheetId;
     private String title;
     private String artist;
     private String instrument;
@@ -25,6 +25,7 @@ public class SheetDetailResponse {
     private String key;
     private String audioUrl;
     private String sheetDataUrl;
+    private Integer share;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     private LocalDateTime createdAt;
@@ -33,13 +34,14 @@ public class SheetDetailResponse {
 
     public static SheetDetailResponse of(Sheet sheet, Audio audio) {
         return SheetDetailResponse.builder()
-                .musicId(String.valueOf(sheet.getId()))
+                .sheetId(String.valueOf(sheet.getId()))
                 .title(sheet.getTitle())
                 .artist(sheet.getArtist())
                 .instrument(sheet.getInstrument())
                 .difficulty(sheet.getDifficulty())
                 .key(sheet.getKey())
                 .audioUrl(audio.getFilePath())
+                .share(sheet.getShare())
                 .sheetDataUrl(sheet.getSheetDataUrl())
                 .createdAt(sheet.getCreatedAt())
                 .updatedAt(sheet.getUpdatedAt())

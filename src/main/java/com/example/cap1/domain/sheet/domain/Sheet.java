@@ -3,6 +3,7 @@ package com.example.cap1.domain.sheet.domain;
 import com.example.cap1.global.database.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Getter
@@ -34,6 +35,11 @@ public class Sheet extends BaseEntity {
 
     @Column(name = "sheet_data_url", length = 500)
     private String sheetDataUrl;
+
+    @Setter
+    @ColumnDefault("0")
+    @Builder.Default
+    private Integer share = 0;
 
     public void update(String title, String artist, String instrument, Difficulty difficulty, String key) {
         if (title != null) this.title = title;

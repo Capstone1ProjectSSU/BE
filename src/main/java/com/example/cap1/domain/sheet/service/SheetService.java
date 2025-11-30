@@ -42,8 +42,8 @@ public class SheetService {
         return SheetListResponse.from(dtoPage, request.getSort());
     }
 
-    public SheetDetailResponse getSheetDetail(Long musicId, Long userId) {
-        Sheet sheet = sheetRepository.findById(musicId)
+    public SheetDetailResponse getSheetDetail(Long sheetId, Long userId) {
+        Sheet sheet = sheetRepository.findById(sheetId)
                 .orElseThrow(() -> new GeneralException(Code.SHEET_NOT_FOUND));
 
         if (!sheet.getUserId().equals(userId)) {
@@ -57,10 +57,10 @@ public class SheetService {
     }
 
     @Transactional
-    public SheetDetailResponse updateSheet(Long musicId, Long userId, SheetUpdateRequest request) {
+    public SheetDetailResponse updateSheet(Long sheetId, Long userId, SheetUpdateRequest request) {
         request.validate();
 
-        Sheet sheet = sheetRepository.findById(musicId)
+        Sheet sheet = sheetRepository.findById(sheetId)
                 .orElseThrow(() -> new GeneralException(Code.SHEET_NOT_FOUND));
 
         if (!sheet.getUserId().equals(userId)) {
@@ -84,8 +84,8 @@ public class SheetService {
     }
 
     @Transactional
-    public void deleteSheet(Long musicId, Long userId) {
-        Sheet sheet = sheetRepository.findById(musicId)
+    public void deleteSheet(Long sheetId, Long userId) {
+        Sheet sheet = sheetRepository.findById(sheetId)
                 .orElseThrow(() -> new GeneralException(Code.SHEET_NOT_FOUND));
 
         if (!sheet.getUserId().equals(userId)) {

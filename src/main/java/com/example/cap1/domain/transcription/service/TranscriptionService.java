@@ -113,7 +113,7 @@ public class TranscriptionService {
         String transcriptionUrl = null;
         String separatedAudioUrl = null;
         String chordProgressionUrl = null;
-        String musicId = null;
+        String sheetId = null;
 
         // 완료된 경우 URL 생성
         if (job.getProgressStage() == ProgressStage.COMPLETED) {
@@ -130,7 +130,7 @@ public class TranscriptionService {
             }
 
             if (job.getSheetId() != null) {
-                musicId = String.valueOf(job.getSheetId());
+                sheetId = String.valueOf(job.getSheetId());
             }
         }
 
@@ -141,7 +141,7 @@ public class TranscriptionService {
                 .progressPercent(job.getProgressPercent())
                 .instrument(job.getInstrument())
                 .jobType(job.getJobType().name())
-                .musicId(musicId)
+                .sheetId(sheetId)
                 // Flat Structure
                 .transcriptionUrl(transcriptionUrl)
                 .separatedAudioUrl(separatedAudioUrl)
@@ -175,7 +175,7 @@ public class TranscriptionService {
                 .instrument(job.getInstrument())
                 .difficulty(Difficulty.NORMAL)
                 .key(key)
-                .sheetDataUrl("/api/transcription/download/" + job.getAiJobId() + "/chords/json")
+                .sheetDataUrl("https://49.50.138.250:8080" + "/var/app/uploads/transcription/" + job.getAiJobId() + "chord_progression.json")
                 .build();
 
         Sheet savedSheet = sheetRepository.save(sheet);
