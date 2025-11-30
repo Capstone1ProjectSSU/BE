@@ -154,8 +154,6 @@ public class TranscriptionDownloadController {
 
             return ResponseEntity.ok()
                     .contentType(mediaType)
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + fileName + "\"")
                     .body(resource);
 
         } catch (GeneralException e) {

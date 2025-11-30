@@ -22,17 +22,12 @@ public class SheetDetailResponse {
     private String artist;
     private String instrument;
     private Difficulty difficulty;
-    private String tuning;
-    private Integer capo;
-    private Long duration;
-    private Integer tempo;
     private String key;
     private String audioUrl;
     private String sheetDataUrl;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     private LocalDateTime createdAt;
-
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     private LocalDateTime updatedAt;
 
@@ -43,10 +38,6 @@ public class SheetDetailResponse {
                 .artist(sheet.getArtist())
                 .instrument(sheet.getInstrument())
                 .difficulty(sheet.getDifficulty())
-                .tuning(sheet.getTuning())
-                .capo(sheet.getCapo())
-                .duration(sheet.getDuration())
-                .tempo(sheet.getTempo())
                 .key(sheet.getKey())
                 .audioUrl(audio.getFilePath())
                 .sheetDataUrl(sheet.getSheetDataUrl())
