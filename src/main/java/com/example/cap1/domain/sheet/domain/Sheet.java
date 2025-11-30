@@ -1,32 +1,51 @@
 package com.example.cap1.domain.sheet.domain;
+
 import com.example.cap1.global.database.BaseEntity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Table(name = "sheet")
 public class Sheet extends BaseEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    @Column(name = "audio_id", nullable = false)
+    private Long audioId;
+
     private String title;
+
     private String artist;
+
     private String instrument;
+
+    @Enumerated(EnumType.STRING)
     private Difficulty difficulty;
-    private String tuning;
-    private Long capo;
-    private Long duration;
-    private Long tempo;
+
+    @Column(name = "`key`", length = 10)
     private String key;
+
+    @Column(name = "sheet_data_url", length = 500)
     private String sheetDataUrl;
-    private String thumbnailUrl;
 
+    @Setter
+    @ColumnDefault("0")
+    @Builder.Default
+    private Integer share = 0;
 
-
+    public void update(String title, String artist, String instrument, Difficulty difficulty, String key) {
+        if (title != null) this.title = title;
+        if (artist != null) this.artist = artist;
+        if (difficulty != null) this.difficulty = difficulty;
+        if (instrument != null) this.instrument = instrument;
+        if (key != null) this.key = key;
+    }
 }
