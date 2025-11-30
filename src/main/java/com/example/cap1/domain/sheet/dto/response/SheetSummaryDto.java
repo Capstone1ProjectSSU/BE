@@ -16,25 +16,26 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class SheetSummaryDto {
 
-    private String musicId;
+    private String sheetId;
     private String title;
     private String artist;
     private String instrument;
     private Difficulty difficulty;
-    private String thumbnailUrl;
+    private Integer share;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     private LocalDateTime createdAt;
 
     public static SheetSummaryDto from(Sheet sheet) {
         return SheetSummaryDto.builder()
-                .musicId(String.valueOf(sheet.getId()))
+                .sheetId(String.valueOf(sheet.getId()))
                 .title(sheet.getTitle())
                 .artist(sheet.getArtist())
                 .instrument(sheet.getInstrument())
                 .difficulty(sheet.getDifficulty())
-//                .thumbnailUrl(sheet.getThumbnailUrl())
                 .createdAt(sheet.getCreatedAt())
+                .share(sheet.getShare())
                 .build();
+
     }
 }
