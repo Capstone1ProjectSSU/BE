@@ -50,15 +50,31 @@ public class TranscriptionJob extends BaseEntity {
     private LocalDateTime failedAt;
 
     public void updateAiJobId(String aiJobId) { this.aiJobId = aiJobId; }
-    public void updateStatus(ProgressStage status) { this.progressStage = status; /* 날짜 업데이트 로직 */ }
+    public void updateStatus(ProgressStage status) { this.progressStage = status; }
     public void updateProgressPercent(Integer p) { this.progressPercent = p; }
     public void updateSheetId(Long sheetId) { this.sheetId = sheetId; }
     public void updateErrorMessage(String msg) { this.errorMessage = msg; }
 
     public static TranscriptionJob create(Long userId, Long audioId, String instrument) {
-        return TranscriptionJob.builder().userId(userId).audioId(audioId).instrument(instrument).jobType(JobType.TRANSCRIPTION).progressStage(ProgressStage.PENDING).queuedAt(LocalDateTime.now()).build();
+        return TranscriptionJob.builder()
+                .userId(userId)
+                .audioId(audioId)
+                .instrument(instrument)
+                .jobType(JobType.TRANSCRIPTION)
+                .progressStage(ProgressStage.PENDING)
+                .queuedAt(LocalDateTime.now())
+                .build();
     }
-    public static TranscriptionJob createDifficultyJob(Long userId, Long audioId, Long sheetId, JobType jobType) {
-        return TranscriptionJob.builder().userId(userId).audioId(audioId).sheetId(sheetId).instrument("guitar").jobType(jobType).progressStage(ProgressStage.PENDING).queuedAt(LocalDateTime.now()).build();
+
+    public static TranscriptionJob createDifficultyJob(Long userId, Long audioId, Long sheetId, String instrument, JobType jobType) {
+        return TranscriptionJob.builder()
+                .userId(userId)
+                .audioId(audioId)
+                .sheetId(sheetId)
+                .instrument(instrument)
+                .jobType(jobType)
+                .progressStage(ProgressStage.PENDING)
+                .queuedAt(LocalDateTime.now())
+                .build();
     }
 }
