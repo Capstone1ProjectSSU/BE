@@ -24,23 +24,6 @@ public enum Code {
     USER_NOT_FOUND(4001, HttpStatus.NOT_FOUND, " User Not Found"),
     USER_SAME(4002, HttpStatus.BAD_REQUEST, "이미 존재하는 유저입니다."),
 
-    // Audio
-    AUDIO_NOT_FOUND(5001, HttpStatus.NOT_FOUND, "음원을 찾을 수 없습니다."),
-    AUDIO_FILE_EMPTY(5002, HttpStatus.BAD_REQUEST, "음원 파일이 비어있습니다."),
-    AUDIO_FILE_TOO_LARGE(5003, HttpStatus.PAYLOAD_TOO_LARGE, "파일 크기는 50MB를 초과할 수 없습니다."),
-    AUDIO_INVALID_FORMAT(5004, HttpStatus.BAD_REQUEST, "MP3 형식만 지원됩니다."),
-    AUDIO_FORBIDDEN(5005, HttpStatus.FORBIDDEN, "음원에 대한 접근 권한이 없습니다."),
-
-    // Sheet
-    SHEET_NOT_FOUND(6001, HttpStatus.NOT_FOUND, "악보를 찾을 수 없습니다."),
-    SHEET_FORBIDDEN(6002, HttpStatus.FORBIDDEN, "악보에 대한 접근 권한이 없습니다."),
-
-    // Transcription
-    JOB_NOT_FOUND(7001, HttpStatus.NOT_FOUND, "작업을 찾을 수 없습니다."),
-    JOB_ALREADY_PROCESSING(7002, HttpStatus.CONFLICT, "해당 음원에 대한 작업이 이미 진행 중입니다."),
-    INSTRUMENT_NOT_SUPPORTED(7003, HttpStatus.NOT_ACCEPTABLE, "지원하지 않는 악기입니다."),
-    AI_SERVER_ERROR(7004, HttpStatus.INTERNAL_SERVER_ERROR, "AI 서버와의 통신에 실패했습니다."),
-    JOB_FORBIDDEN(7005, HttpStatus.FORBIDDEN, "해당 작업에 대한 접근 권한이 없습니다."),
     ;
 
 
