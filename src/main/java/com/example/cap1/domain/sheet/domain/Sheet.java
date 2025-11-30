@@ -9,86 +9,37 @@ import lombok.*;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Table(name = "Sheet")
+@Table(name = "sheet")
 public class Sheet extends BaseEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "userId", nullable = false)
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "audioId", nullable = false)
+    @Column(name = "audio_id", nullable = false)
     private Long audioId;
 
-    @Column(name = "title")
     private String title;
 
-    @Column(name = "artist")
     private String artist;
 
-    @Column(name = "instrument", length = 100)
     private String instrument;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "difficulty")
     private Difficulty difficulty;
-
-    @Column(name = "tuning", length = 50)
-    private String tuning;
-
-    @Column(name = "capo")
-    private Integer capo;
-
-    @Column(name = "duration")
-    private Long duration;
-
-    @Column(name = "tempo")
-    private Integer tempo;
 
     @Column(name = "`key`", length = 10)
     private String key;
 
-    @Column(name = "sheetDataUrl", length = 500)
+    @Column(name = "sheet_data_url", length = 500)
     private String sheetDataUrl;
 
-    // ❌ thumbnailUrl 필드 제거됨
-
-    /**
-     * 악보 정보를 수정합니다.
-     */
-    public void update(String title, String artist, String instrument,
-                       Difficulty difficulty, String tuning, Integer capo,
-                       Integer tempo, String key) {
-        // 필수 필드 - null이 아닐 때만 업데이트
-        if (title != null) {
-            this.title = title;
-        }
-        if (artist != null) {
-            this.artist = artist;
-        }
-        if (difficulty != null) {
-            this.difficulty = difficulty;
-        }
-
-        // 추후 개발 필드 - null이 아니면 업데이트 (빈 문자열도 허용)
-        if (instrument != null) {
-            this.instrument = instrument;
-        }
-        if (tuning != null) {
-            this.tuning = tuning;
-        }
-        if (key != null) {
-            this.key = key;
-        }
-
-        // 숫자 필드
-        if (capo != null) {
-            this.capo = capo;
-        }
-        if (tempo != null) {
-            this.tempo = tempo;
-        }
+    public void update(String title, String artist, String instrument, Difficulty difficulty, String key) {
+        if (title != null) this.title = title;
+        if (artist != null) this.artist = artist;
+        if (difficulty != null) this.difficulty = difficulty;
+        if (instrument != null) this.instrument = instrument;
+        if (key != null) this.key = key;
     }
 }

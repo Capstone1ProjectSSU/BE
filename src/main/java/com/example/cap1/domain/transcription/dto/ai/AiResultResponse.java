@@ -1,77 +1,54 @@
 package com.example.cap1.domain.transcription.dto.ai;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
-/**
- * AI 서버의 /result/{jobId} 응답 DTO
- */
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AiResultResponse {
+
+    @JsonAlias({"jobId", "job_id"})
     private String jobId;
-    private Outputs outputs;
+
+    // --- E2E Fields ---
+    @JsonAlias({"transcriptionUrl", "transcription_url"})
+    private String transcriptionUrl;
+
+    @JsonAlias({"separatedAudioUrl", "separated_audio_url", "separated_tracks"})
+    private JsonNode separatedAudioUrl;
+
+    @JsonAlias({"chordProgressionUrl", "chord_progression_url"})
+    private String chordProgressionUrl;
+
+    @JsonAlias({"format"})
+    private String format;
+
+    // --- Difficulty Fields ---
+    @JsonAlias({"easierChordProgressionUrl", "easier_chord_progression_url"})
+    private String easierChordProgressionUrl;
+
+    @JsonAlias({"complexifiedChordProgressionUrl", "complexified_chord_progression_url"})
+    private String complexifiedChordProgressionUrl;
+
+    @JsonAlias({"unifiedProgression", "unified_progression"})
+    private UnifiedProgression unifiedProgression;
 
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class Outputs {
-        // 음원 분리 결과
-        @JsonProperty("separated_tracks")
-        private SeparatedTracks separatedTracks;
-
-        // MIDI 변환 결과
-        @JsonProperty("transcription_url")
-        private String transcriptionUrl;  // .mid 파일 URL
-
-        // 코드 진행 결과
-        @JsonProperty("chord_progression")
-        private ChordProgression chordProgression;
-
-        // 메타데이터
-        private Metadata metadata;
-    }
-
-    @Getter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class SeparatedTracks {
-        @JsonProperty("guitar_track_url")
-        private String guitarTrackUrl;
-
-        @JsonProperty("bass_track_url")
-        private String bassTrackUrl;
-
-        @JsonProperty("vocal_track_url")
-        private String vocalTrackUrl;
-
-        @JsonProperty("drums_track_url")
-        private String drumsTrackUrl;
-    }
-
-    @Getter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ChordProgression {
-        @JsonProperty("json_url")
-        private String jsonUrl;  // LLM-Chart JSON 파일 URL
-
-        @JsonProperty("txt_url")
-        private String txtUrl;   // 텍스트 파일 URL
-    }
-
-    @Getter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class Metadata {
-        private Integer tempo;
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class UnifiedProgression {
         private String key;
-        private Long duration;  // seconds
 
-        @JsonProperty("time_signature")
-        private String timeSignature;  // "4/4"
+        @JsonAlias({"timeSignature", "time_signature"})
+        private String timeSignature;
     }
 }

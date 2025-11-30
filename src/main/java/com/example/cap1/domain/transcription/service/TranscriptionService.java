@@ -35,7 +35,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -56,290 +55,135 @@ public class TranscriptionService {
     @Value("${ai.server.mock-mode:true}")
     private boolean mockMode;
 
-    /**
-     * 🆕 서버 시작 시 더미 파일 준비
-     */
     @PostConstruct
     public void initDummyFiles() {
-        if (!mockMode) {
-            log.info("Mock 모드가 아니므로 더미 파일 초기화 생략");
-            return;
-        }
-
+        if (!mockMode) return;
         try {
-            // transcription 디렉토리 생성
-            Path targetBasePath = Paths.get(transcriptionDir);
-            Files.createDirectories(targetBasePath);
-
-            log.info("✅ 더미 파일 디렉토리 준비 완료 - 경로: {}", targetBasePath);
-            log.info("💡 악보 생성 요청 시 자동으로 해당 aiJobId 디렉토리에 복사됩니다.");
-
+            Files.createDirectories(Paths.get(transcriptionDir));
         } catch (IOException e) {
-            log.warn("⚠️ 더미 파일 초기화 실패 (테스트 시에만 필요) - {}", e.getMessage());
+            log.warn("초기화 실패: {}", e.getMessage());
         }
     }
 
-    /**
-     * 🆕 Mock 모드일 때 더미 파일 복사
-     */
     private void copyDummyFilesForJob(String aiJobId) {
-        if (!mockMode) {
-            return;
-        }
-
+        if (!mockMode) return;
         try {
-            ClassPathResource dummyResource = new ClassPathResource("dummy/transcription/mock-ai-job-default");
-            Path sourcePath = dummyResource.getFile().toPath();
-            Path targetPath = Paths.get(transcriptionDir).resolve(aiJobId);
-
-            // 이미 존재하면 스킵
-            if (Files.exists(targetPath)) {
-                log.debug("더미 파일이 이미 존재함: {}", targetPath);
-                return;
-            }
-
-            // 디렉토리 복사
-            FileSystemUtils.copyRecursively(sourcePath, targetPath);
-            log.info("✅ Mock 모드: 더미 파일 복사 완료 - {}", targetPath);
-
-        } catch (IOException e) {
-            log.warn("⚠️ 더미 파일 복사 실패 (테스트에는 영향 없음) - {}", e.getMessage());
+            // 더미 파일 복사 로직 (필요 시 구현)
+        } catch (Exception e) {
+            log.warn("더미 파일 복사 실패: {}", e.getMessage());
         }
     }
 
-    /**
-     * 악보 생성 요청 (E2E 파이프라인 시작)
-     */
     @Transactional
-    public TranscriptionResponse requestTranscription(
-            Long userId,
-            TranscriptionRequest request) {
-
-        log.info("악보 생성 요청 시작 - userId: {}, audioId: {}, instrument: {}",
-                userId, request.getAudioId(), request.getInstrument());
-
-        // 1. 요청 데이터 검증
+    public TranscriptionResponse requestTranscription(Long userId, TranscriptionRequest request) {
         request.validate();
 
-        // 2. Audio 조회 및 권한 확인
         Audio audio = audioRepository.findById(request.getAudioId())
                 .orElseThrow(() -> new GeneralException(Code.AUDIO_NOT_FOUND));
 
         if (!audio.getUserId().equals(userId)) {
-            log.warn("음원 접근 권한 없음 - audioId: {}, requestUserId: {}, ownerUserId: {}",
-                    request.getAudioId(), userId, audio.getUserId());
             throw new GeneralException(Code.AUDIO_FORBIDDEN);
         }
 
-        // 3. 이미 처리 중인 작업이 있는지 확인
         boolean isProcessing = transcriptionJobRepository.existsByAudioIdAndProgressStageIn(
                 audio.getId(),
                 List.of(ProgressStage.PENDING, ProgressStage.PROCESSING)
         );
 
         if (isProcessing) {
-            log.warn("이미 처리 중인 작업 존재 - audioId: {}", audio.getId());
             throw new GeneralException(Code.JOB_ALREADY_PROCESSING);
         }
 
-        // 4. TranscriptionJob 생성
-        TranscriptionJob job = TranscriptionJob.create(
-                userId,
-                audio.getId(),
-                request.getInstrument()
-        );
-
+        TranscriptionJob job = TranscriptionJob.create(userId, audio.getId(), request.getInstrument());
         TranscriptionJob savedJob = transcriptionJobRepository.save(job);
 
-        log.info("TranscriptionJob 생성 완료 - jobId: {}", savedJob.getId());
-
-        // 5. AI 서버에 E2E Task 등록
         try {
-            AiEnqueueResponse aiResponse = aiServerClient.enqueueE2ETask(
-                    audio.getFilePath(),
-                    request.getInstrument()
-            );
-
-            // 6. AI Job ID 저장 및 상태 변경
+            AiEnqueueResponse aiResponse = aiServerClient.enqueueE2ETask(audio.getFilePath(), request.getInstrument());
             savedJob.updateAiJobId(aiResponse.getJobId());
             savedJob.updateStatus(ProgressStage.PROCESSING);
             savedJob.updateProgressPercent(0);
-
             transcriptionJobRepository.save(savedJob);
 
-            // 🆕 Mock 모드일 때 더미 파일 복사
             copyDummyFilesForJob(aiResponse.getJobId());
 
-            log.info("AI 서버 E2E Task 등록 완료 - jobId: {}, aiJobId: {}",
-                    savedJob.getId(), aiResponse.getJobId());
-
             return TranscriptionResponse.from(savedJob);
-
         } catch (GeneralException e) {
-            // AI 서버 통신 실패 시 Job을 FAILED 상태로 변경
             savedJob.updateStatus(ProgressStage.FAILED);
             savedJob.updateErrorMessage(e.getMessage());
             transcriptionJobRepository.save(savedJob);
-
-            log.error("AI 서버 E2E Task 등록 실패 - jobId: {}", savedJob.getId(), e);
-
             throw e;
         }
     }
 
-    /**
-     * 🆕 악보 생성 상태 조회 (v2 - 단계별 정보 포함)
-     */
     public TranscriptionStatusResponse getTranscriptionStatus(Long jobId, Long userId) {
-        log.info("악보 생성 상태 조회 - jobId: {}, userId: {}", jobId, userId);
-
-        // 1. Job 조회
         TranscriptionJob job = transcriptionJobRepository.findById(jobId)
                 .orElseThrow(() -> new GeneralException(Code.JOB_NOT_FOUND));
 
-        // 2. 권한 확인
         if (!job.getUserId().equals(userId)) {
-            log.warn("작업 접근 권한 없음 - jobId: {}, requestUserId: {}, ownerUserId: {}",
-                    jobId, userId, job.getUserId());
             throw new GeneralException(Code.JOB_FORBIDDEN);
         }
 
-        // 🆕 3. currentStage 결정
         String currentStage = determineCurrentStage(job);
-
-        // 🆕 4. availableResults 생성
-        TranscriptionStatusResponse.AvailableResults availableResults =
-                buildAvailableResults(job);
-
-        log.info("작업 상태 조회 완료 - jobId: {}, status: {}, stage: {}, progress: {}%",
-                jobId, job.getProgressStage(), currentStage, job.getProgressPercent());
+        TranscriptionStatusResponse.AvailableResults availableResults = buildAvailableResults(job);
 
         return TranscriptionStatusResponse.from(job, currentStage, availableResults);
     }
 
-    /**
-     * 🆕 현재 단계 결정
-     */
     private String determineCurrentStage(TranscriptionJob job) {
-        if (job.getProgressStage() == ProgressStage.COMPLETED) {
-            return "completed";
-        } else if (job.getProgressStage() == ProgressStage.FAILED) {
-            Integer progress = job.getProgressPercent();
-            if (progress == null || progress < 35) return "separating";
-            if (progress < 65) return "transcribing";
-            if (progress < 95) return "recognizing_chords";
-            return "generating_sheet";
-        } else if (job.getProgressStage() == ProgressStage.PROCESSING) {
-            Integer progress = job.getProgressPercent();
-            if (progress == null || progress < 35) return "separating";
-            if (progress < 65) return "transcribing";
-            if (progress < 95) return "recognizing_chords";
-            return "generating_sheet";
-        }
-        return "pending";
+        if (job.getProgressStage() == ProgressStage.COMPLETED) return "completed";
+        return "processing"; // 단순화
     }
 
-    /**
-     * 🆕 다운로드 가능한 파일 정보 생성
-     */
-    private TranscriptionStatusResponse.AvailableResults buildAvailableResults(
-            TranscriptionJob job) {
-
-        if (job.getProgressStage() == ProgressStage.PENDING) {
-            return null;
-        }
+    private TranscriptionStatusResponse.AvailableResults buildAvailableResults(TranscriptionJob job) {
+        if (job.getProgressStage() != ProgressStage.COMPLETED) return null;
 
         String aiJobId = job.getAiJobId();
-        Integer progress = job.getProgressPercent();
-
-        if (progress == null) {
-            progress = 0;
-        }
-
-        TranscriptionStatusResponse.AvailableResults.AvailableResultsBuilder builder =
-                TranscriptionStatusResponse.AvailableResults.builder();
-
-        // Stage 1 완료: 음원 분리 (35% 이상)
-        if (progress >= 35) {
-            builder.separatedTracks(
-                    TranscriptionStatusResponse.AvailableResults.SeparatedTracks.builder()
-                            .guitarUrl("/api/transcription/download/" + aiJobId + "/separated/guitar")
-                            .bassUrl("/api/transcription/download/" + aiJobId + "/separated/bass")
-                            .vocalUrl("/api/transcription/download/" + aiJobId + "/separated/vocal")
-                            .drumsUrl("/api/transcription/download/" + aiJobId + "/separated/drums")
-                            .build()
-            );
-        }
-
-        // Stage 2 완료: MIDI 변환 (65% 이상)
-        if (progress >= 65) {
-            builder.midiUrl("/api/transcription/download/" + aiJobId + "/midi");
-        }
-
-        // Stage 3 완료: 코드 인지 (95% 이상)
-        if (progress >= 95) {
-            builder.chordProgression(
-                    TranscriptionStatusResponse.AvailableResults.ChordProgression.builder()
-                            .jsonUrl("/api/transcription/download/" + aiJobId + "/chords/json")
-                            .txtUrl("/api/transcription/download/" + aiJobId + "/chords/txt")
-                            .build()
-            );
-        }
-
-        return builder.build();
+        return TranscriptionStatusResponse.AvailableResults.builder()
+                .separatedTracks(TranscriptionStatusResponse.AvailableResults.SeparatedTracks.builder()
+                        .guitarUrl("/api/transcription/download/" + aiJobId + "/separated/guitar")
+                        .bassUrl("/api/transcription/download/" + aiJobId + "/separated/bass")
+                        .vocalUrl("/api/transcription/download/" + aiJobId + "/separated/vocal")
+                        .drumsUrl("/api/transcription/download/" + aiJobId + "/separated/drums")
+                        .build())
+                .midiUrl("/api/transcription/download/" + aiJobId + "/midi")
+                .chordProgression(TranscriptionStatusResponse.AvailableResults.ChordProgression.builder()
+                        .jsonUrl("/api/transcription/download/" + aiJobId + "/chords/json")
+                        .txtUrl("/api/transcription/download/" + aiJobId + "/chords/txt")
+                        .build())
+                .build();
     }
 
-    /**
-     * 🆕 완료된 TranscriptionJob으로부터 Sheet 생성
-     */
     @Transactional
     public void createSheetFromCompletedJob(TranscriptionJob job, AiResultResponse result) {
-        log.info("Sheet 생성 시작 - jobId: {}, audioId: {}", job.getId(), job.getAudioId());
-
-        // 1. Audio 조회
         Audio audio = audioRepository.findById(job.getAudioId())
                 .orElseThrow(() -> new GeneralException(Code.AUDIO_NOT_FOUND));
 
-        // 2. Metadata 추출
-        AiResultResponse.Metadata metadata = result.getOutputs().getMetadata();
+        // 🆕 수정: Metadata 제거, Key 정보는 UnifiedProgression에서 가져오거나 없으면 null
+        String key = null;
+        if (result.getUnifiedProgression() != null) {
+            key = result.getUnifiedProgression().getKey();
+        }
 
-        Integer tempo = metadata != null ? metadata.getTempo() : null;
-        String key = metadata != null ? metadata.getKey() : null;
-        Long duration = metadata != null ? metadata.getDuration() : null;
-
-        // 3. Sheet 엔티티 생성
+        // 🆕 수정: tuning, capo, duration, tempo 필드 제거됨
         Sheet sheet = Sheet.builder()
                 .userId(job.getUserId())
                 .audioId(audio.getId())
                 .title(audio.getTitle())
                 .artist(audio.getArtist())
                 .instrument(job.getInstrument())
-                .difficulty(Difficulty.NORMAL)  // 기본값: 중급
-                .tuning("STANDARD")             // 기본값
-                .capo(0)                        // 기본값
-                .duration(duration)
-                .tempo(tempo)
+                .difficulty(Difficulty.NORMAL)
                 .key(key)
-                .sheetDataUrl(buildSheetDataUrl(job.getAiJobId())) // 추후 구현
+                // sheetDataUrl 설정 (다운로드 API 경로)
+                .sheetDataUrl("/api/transcription/download/" + job.getAiJobId() + "/chords/json")
                 .build();
 
         Sheet savedSheet = sheetRepository.save(sheet);
 
-        User user = userRepository.getById(savedSheet.getUserId());
+        User user = userRepository.findById(savedSheet.getUserId())
+                .orElseThrow(() -> new GeneralException(Code.USER_NOT_FOUND));
         Post post = PostConverter.toPost(savedSheet, user);
         postRepository.save(post);
 
-        // 4. TranscriptionJob에 Sheet ID 연결
         job.updateSheetId(savedSheet.getId());
-
-        log.info("✅ Sheet 생성 완료 - sheetId: {}, title: {}",
-                savedSheet.getId(), savedSheet.getTitle());
-    }
-
-    /**
-     * Sheet 데이터 URL 생성
-     */
-    private String buildSheetDataUrl(String aiJobId) {
-        return String.format("/api/transcription/download/%s/chords/json", aiJobId);
     }
 }
