@@ -176,7 +176,7 @@ public class TranscriptionService {
                 .difficulty(Difficulty.NORMAL)
                 .key(key)
                 .sheetDataUrl("/api/transcription/download/" + job.getAiJobId() + "/chords/json")
-                .build();
+		.build();
 
         Sheet savedSheet = sheetRepository.save(sheet);
 

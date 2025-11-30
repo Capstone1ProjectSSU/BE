@@ -247,8 +247,8 @@ public class AiServerClient {
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
 
-            String relativePath = audioFilePath.startsWith("/") ? audioFilePath.substring(1) : audioFilePath;
-            Path filePath = Paths.get(relativePath).toAbsolutePath();
+            String filename = Paths.get(audioFilePath).getFileName().toString();
+            Path filePath = Paths.get(uploadDir).resolve(filename).normalize();
             File audioFile = filePath.toFile();
 
             if (!audioFile.exists()) {

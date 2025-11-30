@@ -42,7 +42,8 @@ public class SecurityConfig {
                                 "/api/audio/**",
                                 "/api/transcription/**",
                                 "/api/difficulty/**", // 추가
-                                "/api/sheets/**"      // 추가
+                                "/api/sheets/**",
+				"/uploads/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
