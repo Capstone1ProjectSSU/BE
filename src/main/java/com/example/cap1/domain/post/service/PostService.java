@@ -9,6 +9,7 @@ import com.example.cap1.domain.post.dto.response.PostListResponseDto;
 import com.example.cap1.domain.post.dto.response.PostShareDetailResponseDto;
 import com.example.cap1.domain.post.dto.response.PostShareResponseDto;
 import com.example.cap1.domain.post.repository.PostRepository;
+import com.example.cap1.domain.sheet.domain.Sheet;
 import com.example.cap1.domain.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,12 @@ public class PostService {
         }
 
         post.updateShare();
+
+        Sheet sheet = post.getSheet();
+        if (sheet != null) {
+            sheet.setShare(1);
+        }
+
         return PostConverter.toPostShareResponseDto(post);
     }
 
@@ -49,6 +56,12 @@ public class PostService {
         }
 
         post.updateUnShare();
+
+        Sheet sheet = post.getSheet();
+        if (sheet != null) {
+            sheet.setShare(0);
+        }
+
         return PostConverter.toPostShareResponseDto(post);
     }
 

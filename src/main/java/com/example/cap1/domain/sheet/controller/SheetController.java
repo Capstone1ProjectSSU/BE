@@ -43,16 +43,16 @@ public class SheetController {
     /**
      * 악보 상세 정보를 조회합니다.
      */
-    @GetMapping("/{musicId}")
+    @GetMapping("/{sheetId}")
     public ResponseDto<SheetDetailResponse> getSheetDetail(
-            @PathVariable Long musicId,
+            @PathVariable Long sheetId,
             @AuthenticationPrincipal User user // 🚀 추가
     ) {
-        log.info("악보 상세 조회 API 호출 - musicId: {}", musicId);
+        log.info("악보 상세 조회 API 호출 - sheetId: {}", sheetId);
 
         Long userId = user.getId(); // 🚀 수정 (하드코딩 1L 제거)
 
-        SheetDetailResponse response = sheetService.getSheetDetail(musicId, userId);
+        SheetDetailResponse response = sheetService.getSheetDetail(sheetId, userId);
 
         return ResponseDto.of(response);
     }
@@ -60,17 +60,17 @@ public class SheetController {
     /**
      * 악보 정보를 수정합니다.
      */
-    @PutMapping("/{musicId}")
+    @PutMapping("/{sheetId}")
     public ResponseDto<SheetDetailResponse> updateSheet(
-            @PathVariable Long musicId,
+            @PathVariable Long sheetId,
             @RequestBody SheetUpdateRequest request,
             @AuthenticationPrincipal User user
     ) {
-        log.info("악보 수정 API 호출 - musicId: {}", musicId);
+        log.info("악보 수정 API 호출 - sheetId: {}", sheetId);
 
         Long userId = user.getId();
 
-        SheetDetailResponse response = sheetService.updateSheet(musicId, userId, request);
+        SheetDetailResponse response = sheetService.updateSheet(sheetId, userId, request);
 
         return ResponseDto.of(response);
     }
@@ -78,16 +78,16 @@ public class SheetController {
     /**
      * 악보를 삭제합니다.
      */
-    @DeleteMapping("/{musicId}")
+    @DeleteMapping("/{sheetId}")
     public ApiResponse deleteSheet(
-            @PathVariable Long musicId,
+            @PathVariable Long sheetId,
             @AuthenticationPrincipal User user
     ) {
-        log.info("악보 삭제 API 호출 - musicId: {}", musicId);
+        log.info("악보 삭제 API 호출 - sheetId: {}", sheetId);
 
         Long userId = user.getId();
 
-        sheetService.deleteSheet(musicId, userId);
+        sheetService.deleteSheet(sheetId, userId);
 
         return ApiResponse.of(true, Code.OK, "악보가 삭제되었습니다.");
     }

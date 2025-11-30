@@ -31,7 +31,7 @@ public class TranscriptionStatusResponse {
     private String chordProgressionUrl; // JSON
     private String format;
 
-    private String musicId; // 결과로 생성된 Sheet ID
+    private String sheetId; // 결과로 생성된 Sheet ID
     private String errorMessage;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
